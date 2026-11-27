@@ -136,15 +136,14 @@ jobs:
             const page=await browser.newPage({viewport:{width,height:900},reducedMotion:'reduce'});
             const errors=[];page.on('pageerror',e=>errors.push(e.message));
             await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
-            if(await page.locator('.project').count()!==33)throw Error('Missing cards (33 expected)');
-            if(await page.locator('.project figure').count()!==33)throw Error('Missing preview');
+            if(await page.locator('.project').count()!==18)throw Error('Missing cards (18 expected)');
+            if(await page.locator('.project figure').count()!==18)throw Error('Missing preview');
             if(await page.locator('[data-project-group="apps"] article h3').first().innerText()!=='Zaker')throw Error('Zaker must lead published apps');
             if(await page.locator('.project h3').filter({hasText:'Solar Intelligence'}).count())throw Error('Removed research portal still visible');
             if(await page.locator('.project a[href="https://ncpop.org.sa/"]').count()<1||await page.locator('.project a[href="https://visitors-rs.com/"]').count()<1)throw Error('Missing official sites');
             if(await page.locator('.profile-photo').evaluate(i=>getComputedStyle(i).filter)!=='none')throw Error('Portrait not in natural color');
             await page.locator('[data-filter="ai"]').click();
             await page.locator('[data-filter="all"]').click();
-            if(await page.locator('.archive-details').getAttribute('open')===null)await page.locator('.archive-details summary').click();
             const broken=await page.locator('img[src^="assets/previews/"]').evaluateAll(async imgs=>{await Promise.all(imgs.map(i=>{i.loading='eager';return i.decode().catch(()=>{})}));return imgs.filter(i=>!i.naturalWidth).map(i=>i.src)});
             if(broken.length)throw Error('Broken local images '+broken.join(','));
             if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2))throw Error('Horizontal overflow at '+width);
