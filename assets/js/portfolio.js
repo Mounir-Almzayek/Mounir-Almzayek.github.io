@@ -27,22 +27,91 @@ function initImageFallbacks() {
   });
 }
 
+// Full-page radial wipe using real old/new snapshots (no cloned content).
 function initTheme() {
   const button = document.getElementById('theme-toggle');
   if (!button) return;
+  const root = document.documentElement;
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  let desiredDark = false;
+  let running = null;
+  let busy = false;
+
   function setTheme(dark) {
-    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    root.dataset.theme = dark ? 'dark' : 'light';
     button.setAttribute('aria-pressed', String(dark));
     const label = dark ? button.dataset.labelLight : button.dataset.labelDark;
     button.setAttribute('aria-label', label);
     button.title = label;
-    // Keep the icon-only button intact; never replace its SVG children with text.
     try { localStorage.setItem('portfolio-theme', dark ? 'dark' : 'light'); } catch {}
   }
+
+  // The button is fixed by the existing layout, so the origin is correct for
+  // keyboard activation, touch, RTL, and any position of the sticky header.
+  function origin() {
+    const rect = button.getBoundingClientRect();
+    const x = Math.max(0, Math.min(innerWidth, rect.left + rect.width / 2));
+    const y = Math.max(0, Math.min(innerHeight, rect.top + rect.height / 2));
+    const radius = Math.ceil(Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y))) + 2;
+    return { x, y, radius };
+  }
+  function clearWipe() {
+    delete root.dataset.themeTransition;
+    for (const prop of ['--theme-wipe-x', '--theme-wipe-y', '--theme-wipe-radius']) root.style.removeProperty(prop);
+  }
+  function iconMotion() {
+    if (reduced.matches || document.hidden || !button.animate) return;
+    const icon = button.querySelector(desiredDark ? '.theme-sun' : '.theme-moon');
+    icon?.animate([
+      { transform: 'rotate(-42deg) scale(.7)', opacity: .6 },
+      { transform: 'rotate(8deg) scale(1.1)', opacity: 1, offset: .7 },
+      { transform: 'rotate(0deg) scale(1)', opacity: 1 }
+    ], { duration: 320, easing: 'cubic-bezier(.2,.8,.2,1)' });
+  }
+
+  async function run() {
+    if (busy || desiredDark === (root.dataset.theme === 'dark')) return;
+    const dark = desiredDark;
+    if (reduced.matches || document.hidden || typeof document.startViewTransition !== 'function') {
+      setTheme(dark);
+      iconMotion();
+      return;
+    }
+    busy = true;
+    const { x, y, radius } = origin();
+    root.style.setProperty('--theme-wipe-x', x + 'px');
+    root.style.setProperty('--theme-wipe-y', y + 'px');
+    root.style.setProperty('--theme-wipe-radius', radius + 'px');
+    root.dataset.themeTransition = dark ? 'expand' : 'contract';
+    try {
+      running = document.startViewTransition(() => setTheme(dark));
+      // ready can reject when a transition is skipped; consume it separately.
+      running.ready.catch(() => {});
+      await running.finished;
+    } catch {
+      setTheme(dark);
+    } finally {
+      running = null;
+      clearWipe();
+      busy = false;
+      // Rapid repeated clicks are coalesced into the last requested theme.
+      if (desiredDark !== (root.dataset.theme === 'dark')) void run();
+      else iconMotion();
+    }
+  }
+
   let saved;
   try { saved = localStorage.getItem('portfolio-theme'); } catch {}
-  setTheme(saved === 'dark');
-  button.addEventListener('click', () => setTheme(document.documentElement.dataset.theme !== 'dark'));
+  desiredDark = saved === 'dark';
+  setTheme(desiredDark);
+  button.addEventListener('click', () => {
+    desiredDark = !desiredDark;
+    void run();
+  });
+  reduced.addEventListener('change', () => { if (reduced.matches) running?.skipTransition(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) running?.skipTransition(); });
+  window.addEventListener('resize', () => running?.skipTransition(), { passive: true });
+  window.addEventListener('beforeprint', () => running?.skipTransition());
 }
 
 function initPortraitMotion() {
