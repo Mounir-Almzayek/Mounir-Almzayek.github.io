@@ -613,8 +613,8 @@ function initHeroAmbient() {
   for (let i = 0; i < 32; i++) {
     nodes.push({
       x: .055 + (i % 8) * .127 + (random() - .5) * .046, y: .12 + Math.floor(i / 8) * .25 + (random() - .5) * .10,
-      phase: random() * Math.PI * 2, speed: .19 + random() * .21,
-      depth: .45 + random() * .8, radius: 1.2 + random() * 1.5
+      phase: random() * Math.PI * 2, speed: .14 + random() * .16,
+      depth: .45 + random() * .8, radius: 1.0 + random() * 1.15
     });
   }
   for (let i = 0; i < nodes.length; i++) {
@@ -623,7 +623,7 @@ function initHeroAmbient() {
     })).filter(n => n.j !== i && n.d < .21).sort((a, b) => a.d - b.d).slice(0, 2);
     for (const n of nearest) {
       if (!links.some(link => (link.a === i && link.b === n.j) || (link.a === n.j && link.b === i))) {
-        links.push({ a: i, b: n.j, phase: random(), pulse: random() < .68, bend: random() > .24 });
+        links.push({ a: i, b: n.j, phase: random(), pulse: random() < .52, bend: random() > .24 });
       }
     }
   }
@@ -660,19 +660,19 @@ function initHeroAmbient() {
       const dx = (pointerX * width - baseX), dy = (pointerY * height - baseY);
       const influence = Math.max(0, 1 - Math.hypot(dx, dy) / 250) * pointerStrength;
       return {
-        x: baseX + Math.sin(t * n.speed + n.phase) * 11 * n.depth + dx * influence * .12,
-        y: baseY + Math.cos(t * n.speed * .8 + n.phase) * 8 * n.depth + dy * influence * .12,
+        x: baseX + Math.sin(t * n.speed + n.phase) * 11 * n.depth + dx * influence * .085,
+        y: baseY + Math.cos(t * n.speed * .8 + n.phase) * 8 * n.depth + dy * influence * .085,
         influence, n
       };
     });
     // Fine network connections and moving signal packets along their paths.
-    ctx.lineWidth = compact ? .9 : 1.15;
+    ctx.lineWidth = compact ? .75 : .95;
     for (const link of links) {
       if (link.a >= count || link.b >= count) continue;
       const a = field[link.a], b = field[link.b];
       const pulse = (Math.sin(t * .8 + link.phase * 6.28) + 1) * .5;
       const strength = Math.max(a.influence, b.influence);
-      const alpha = (dark ? .23 : .19) + pulse * .06 + strength * .15;
+      const alpha = (dark ? .16 : .13) + pulse * .04 + strength * .10;
       const mid = link.bend ? { x: a.x, y: b.y } : { x: b.x, y: a.y };
       ctx.strokeStyle = rgb(ink, alpha);
       ctx.beginPath();
@@ -682,7 +682,7 @@ function initHeroAmbient() {
       ctx.lineTo(b.x, b.y);
       ctx.stroke();
       if (link.pulse) {
-        const p = (t * .20 + link.phase) % 1;
+        const p = (t * .15 + link.phase) % 1;
         let x, y;
         if (link.bend) {
           const first = Math.abs(mid.y - a.y);
@@ -691,19 +691,19 @@ function initHeroAmbient() {
           if (dist < first) { x = a.x; y = a.y + (mid.y - a.y) * dist / (first || 1); }
           else { x = mid.x + (b.x - mid.x) * (dist - first) / (total - first || 1); y = b.y; }
         } else { x = a.x + (b.x - a.x) * p; y = a.y + (b.y - a.y) * p; }
-        ctx.fillStyle = rgb(ink, (dark ? .64 : .55) * Math.sin(Math.PI * p));
-        ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = rgb(ink, (dark ? .43 : .36) * Math.sin(Math.PI * p));
+        ctx.beginPath(); ctx.arc(x, y, 2.0, 0, Math.PI * 2); ctx.fill();
       }
     }
     // Drifting junctions, small rings and restrained cursor interaction.
     for (let i = 0; i < field.length; i++) {
       const { x, y, n, influence } = field[i];
       const breathing = .5 + .5 * Math.sin(t * .9 + n.phase);
-      ctx.fillStyle = rgb(neutral, .22 + breathing * .18 + influence * .17);
+      ctx.fillStyle = rgb(neutral, .17 + breathing * .14 + influence * .11);
       ctx.beginPath(); ctx.arc(x, y, n.radius, 0, Math.PI * 2); ctx.fill();
       if (i % 4 === 0) {
-        ctx.strokeStyle = rgb(ink, .12 + breathing * .12 + influence * .12);
-        ctx.beginPath(); ctx.arc(x, y, 6 + breathing * 5, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = rgb(ink, .09 + breathing * .08 + influence * .08);
+        ctx.beginPath(); ctx.arc(x, y, 5 + breathing * 4, 0, Math.PI * 2); ctx.stroke();
       }
     }
     // Fade the field at its edges and behind the text, without overlaying the content.
