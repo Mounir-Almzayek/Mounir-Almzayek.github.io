@@ -265,5 +265,7 @@
   "media.credential-issuer": "Issuer website ↗",
   "media.credential-profile": "View LinkedIn credentials ↗",
   "media.credential-original": "Original credential · issuer public page",
-  "media.credential-verify": "View credential ↗"
+  "media.credential-verify": "View credential ↗",
+  "navigation.certifications": "Certificates",
+  "navigation.volunteering": "Volunteering"
 }

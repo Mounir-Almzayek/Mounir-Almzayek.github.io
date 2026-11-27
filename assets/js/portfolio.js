@@ -68,7 +68,7 @@ function initNavigation() {
   const links = nav?.querySelector('.nav-primary');
   if (!nav || !toggle || !links) return;
   nav.classList.add('nav-ready');
-  const mobile = window.matchMedia('(max-width: 700px)');
+  const mobile = window.matchMedia('(max-width: 900px)');
   function setOpen(open, focus = false) {
     toggle.setAttribute('aria-expanded', String(open));
     links.classList.toggle('is-open', open);

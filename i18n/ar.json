@@ -265,5 +265,7 @@
   "media.credential-issuer": "موقع الجهة المانحة ↗",
   "media.credential-profile": "عرض الشهادات على LinkedIn ↗",
   "media.credential-original": "الشهادة الأصلية · صفحة الجهة المانحة العامة",
-  "media.credential-verify": "عرض الشهادة ↗"
+  "media.credential-verify": "عرض الشهادة ↗",
+  "navigation.certifications": "الشهادات",
+  "navigation.volunteering": "التطوع"
 }
