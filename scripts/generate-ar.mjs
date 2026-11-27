@@ -19,8 +19,8 @@ html=html.replace(/<body>[\s\S]*?<\/body>/,body=>body.replace(/<svg\b[\s\S]*?<\/
   if(data.dictionary[key]!==undefined)return '>'+node.replace(key,data.dictionary[key])+'<';
   missing.add(key);return match;
 }));
-html=html.replace('href="/ar/" lang="ar" hreflang="ar" aria-label="عرض الموقع بالعربية">العربية','href="/" lang="en" hreflang="en" aria-label="View English version">English');
-html=html.replace(/aria-label="([^"]+)"/g,(m,key)=>data.attrs[key]?'aria-label="'+data.attrs[key]+'"':m);
+html=html.replace('href="/ar/" lang="ar" hreflang="ar" aria-label="عرض الموقع بالعربية" title="العربية">AR','href="/" lang="en" hreflang="en" aria-label="View English version" title="English">EN');
+html=html.replace(/(aria-label|title)="([^"]+)"/g,(m,attr,key)=>data.attrs[key]?attr+'="'+data.attrs[key]+'"':m);
 html=html.replace(/aria-label="Open ([^"]+) on Google Play"/g,'aria-label="فتح $1 على Google Play"');
 html=html.replace(/<p>(Python, PyTorch|Flutter, Dart|TypeScript, Next.js)/g,'<p class="technical-list" dir="ltr">$1');
 if(missing.size)throw new Error('Untranslated content: '+[...missing].join(' | '));
