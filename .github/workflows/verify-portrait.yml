@@ -1,0 +1,69 @@
+name: Verify animated portfolio portrait
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-portrait.yml', 'index.html']
+permissions:
+  contents: read
+concurrency:
+  group: verify-portfolio-portrait
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.56.1
+      - run: npx playwright install chromium
+      - name: Verify responsive portrait, theme and motion preferences
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/portfolio-http.log 2>&1 &
+          for i in {1..20}; do curl -fsS http://127.0.0.1:8765/ >/dev/null && break; sleep 1; done
+          node --input-type=module <<'JS'
+          import { chromium } from 'playwright';
+          const browser=await chromium.launch();
+          for(const width of [390,768,1024,1440]){
+            const page=await browser.newPage({viewport:{width,height:900},reducedMotion:'no-preference'});
+            const errors=[];page.on('pageerror',e=>errors.push(e.message));
+            await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
+            const img=page.locator('.profile-photo');
+            await img.evaluate(i=>i.decode());
+            const box=await img.boundingBox();
+            if(!box||box.width<(width===1440?375:width===390?240:210))throw Error('Portrait too small at '+width+': '+JSON.stringify(box));
+            if(await img.evaluate(i=>getComputedStyle(i).filter)!=='none')throw Error('Portrait not in natural color');
+            const pulse=page.locator('.orbit-pulse').first(), motion=page.locator('.motion-toggle');
+            if(await pulse.evaluate(p=>getComputedStyle(p).animationName)!=='portrait-signal-flow')throw Error('Missing animation');
+            if(await pulse.evaluate(p=>getComputedStyle(p).animationPlayState)!=='running')throw Error('Animation not running');
+            const before=await pulse.evaluate(p=>getComputedStyle(p).strokeDashoffset);
+            await page.waitForTimeout(300);
+            if(before===await pulse.evaluate(p=>getComputedStyle(p).strokeDashoffset))throw Error('Animation not moving');
+            await motion.click();
+            if(await pulse.evaluate(p=>getComputedStyle(p).animationPlayState)!=='paused')throw Error('Pause failed');
+            await motion.click();
+            if(await pulse.evaluate(p=>getComputedStyle(p).animationPlayState)!=='running')throw Error('Resume failed');
+            if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2))throw Error('Horizontal overflow '+width);
+            if(await page.locator('.project').count()!==33)throw Error('Project count changed');
+            if(errors.length)throw Error(errors.join('; '));
+            await page.screenshot({path:'/tmp/portrait-'+width+'-light.png',animations:'disabled'});
+            await page.locator('#theme-toggle').click();
+            if(await page.locator('html').getAttribute('data-theme')!=='dark')throw Error('Theme toggle failed');
+            await page.screenshot({path:'/tmp/portrait-'+width+'-dark.png',animations:'disabled'});
+            console.log(JSON.stringify({width,photoWidth:box.width,photoHeight:box.height,motion:'passed',theme:'passed',overflow:false}));
+            await page.close();
+          }
+          const reduced=await browser.newPage({viewport:{width:390,height:900},reducedMotion:'reduce'});
+          await reduced.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
+          if(await reduced.locator('.orbit-pulse').first().evaluate(p=>getComputedStyle(p).animationName)!=='none')throw Error('Reduced motion failed');
+          console.log('Reduced motion preference: passed');
+          await browser.close();
+          JS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: portrait-responsive-verification
+          path: /tmp/portrait-*.png
