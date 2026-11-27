@@ -215,6 +215,12 @@ try {
   for (const locale of ['en', 'ar']) {
     const motion = await browser.newPage({ viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference' });
     await motion.goto(origin + (locale === 'ar' ? '/ar/' : '/'), { waitUntil: 'domcontentloaded' });
+    const ambient = motion.locator('.hero-ambient');
+    assert.equal(await ambient.getAttribute('aria-hidden'), 'true');
+    assert.equal(await ambient.evaluate(node => getComputedStyle(node).pointerEvents), 'none');
+    await motion.waitForFunction(() => document.querySelector('.hero-ambient')?.dataset.ambientState === 'running');
+    const bitmap = await ambient.evaluate(node => node.toDataURL());
+    await motion.waitForFunction(previous => document.querySelector('.hero-ambient').toDataURL() !== previous, bitmap);
     const role = motion.locator('.hero-role');
     await motion.waitForFunction(() => {
       const overlay = document.querySelector('.hero-role [data-typing-overlay]');
@@ -235,12 +241,14 @@ try {
       return !node.hasAttribute('data-motion-pending') && node.getAnimations().some(animation => animation.id === 'portfolio-motion-reveal');
     });
     await motion.waitForFunction(() => getComputedStyle(document.querySelector('#certifications .credential-card')).opacity === '1');
+    await motion.waitForFunction(() => document.querySelector('.hero-ambient')?.dataset.ambientState === 'paused');
     await motion.close();
   }
   const page = await browser.newPage({ reducedMotion: 'reduce' });
   await page.goto(origin, { waitUntil: 'domcontentloaded' });
   assert.equal(await page.locator('.signal-runner').evaluate(p => getComputedStyle(p).animationName), 'none');
   assert.equal(await page.locator('.motion-toggle').isVisible(), false);
+  await page.waitForFunction(() => document.querySelector('.hero-ambient')?.dataset.ambientState === 'paused');
   await page.locator('.profile-photo').hover();
   assert.equal(await page.locator('.profile-photo').evaluate(node => node.style.transform), '', 'Reduced motion disables pointer depth');
   assert.equal(await page.locator('meta[property="og:image"]').count(), 1);
