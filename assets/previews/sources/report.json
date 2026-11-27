@@ -50,6 +50,13 @@
     "status": "existing genuine image"
   },
   {
+    "name": "Rai — National Center for Public Opinion Polls",
+    "status": "existing genuine image",
+    "kind": "Official client organization website · not the survey app",
+    "url": "https://ncpop.org.sa/",
+    "path": "assets/previews/sources/rai-official.jpg"
+  },
+  {
     "name": "OVA — Ovaluate",
     "status": "existing genuine image"
   },
@@ -60,15 +67,16 @@
       {
         "url": "https://visitors-rs.com/",
         "error": "Error: Unusable page"
+      },
+      {
+        "url": "https://visitors-rs.com/companies/",
+        "error": "Error: Unusable page"
+      },
+      {
+        "url": "https://www.rs4it.sa/service/نظام-إدارة-الزوار-للمنشآت/",
+        "error": "Error: Unusable page"
       }
     ]
-  },
-  {
-    "name": "Rai — National Center for Public Opinion Polls",
-    "status": "captured",
-    "kind": "Official client organization website · not the survey app",
-    "url": "https://ncpop.org.sa/",
-    "path": "assets/previews/sources/rai-official.jpg"
   },
   {
     "name": "Autonomous Deterministic Agent System",
