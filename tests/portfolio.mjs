@@ -16,6 +16,35 @@ try {
     assert.equal(await page.locator('html').evaluate(node => getComputedStyle(node).direction), locale === 'ar' ? 'rtl' : 'ltr');
     assert.equal(await page.locator('.language-toggle').getAttribute('href'), locale === 'ar' ? '/' : '/ar/');
     assert.ok(await page.locator('.language-toggle').isVisible());
+    const nav = page.locator('.top nav');
+    const theme = page.locator('#theme-toggle');
+    const menu = page.locator('.menu-toggle');
+    const navPrimary = page.locator('.nav-primary');
+    assert.equal(await page.locator('.language-toggle').innerText(), locale === 'ar' ? 'EN' : 'AR');
+    assert.equal(await theme.innerText(), '');
+    assert.equal(await theme.getAttribute('aria-label'), locale === 'ar' ? 'الوضع الداكن' : 'Dark mode');
+    assert.ok(await theme.locator('.theme-moon').isVisible());
+    assert.equal(await theme.locator('.theme-sun').isVisible(), false);
+    assert.ok((await nav.boundingBox()).height <= 64, 'Compact header');
+    assert.equal(await navPrimary.locator('a.pill').count(), 1);
+    if (width <= 700) {
+      assert.ok(await menu.isVisible());
+      assert.equal(await navPrimary.isVisible(), false);
+      await menu.click();
+      assert.equal(await menu.getAttribute('aria-expanded'), 'true');
+      assert.ok(await navPrimary.isVisible());
+      assert.equal(await navPrimary.locator('a:visible').count(), 4);
+      await page.keyboard.press('Escape');
+      assert.equal(await menu.getAttribute('aria-expanded'), 'false');
+      assert.equal(await navPrimary.isVisible(), false);
+      await menu.click();
+      await navPrimary.locator('a[href="#work"]').click();
+      assert.equal(await menu.getAttribute('aria-expanded'), 'false');
+      await page.evaluate(() => scrollTo(0,0));
+    } else {
+      assert.equal(await menu.isVisible(), false);
+      assert.equal(await navPrimary.locator('a:visible').count(), 4);
+    }
     if (locale === 'ar') {
       await page.evaluate(() => document.fonts.ready);
       assert.match(await page.locator('.hero h1').evaluate(node => getComputedStyle(node).fontFamily), /IBM Plex Sans Arabic/);
@@ -109,7 +138,9 @@ try {
     await page.screenshot({ path: '/tmp/portfolio-' + locale + '-' + width + '-light.png', animations: 'disabled' });
     await page.locator('#theme-toggle').click();
     assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
-    assert.equal(await page.locator('#theme-toggle').innerText(), locale === 'ar' ? 'الوضع الفاتح' : 'Light mode');
+    assert.equal(await page.locator('#theme-toggle').getAttribute('aria-label'), locale === 'ar' ? 'الوضع الفاتح' : 'Light mode');
+    assert.ok(await theme.locator('.theme-sun').isVisible());
+    assert.equal(await theme.locator('.theme-moon').isVisible(), false);
     await page.screenshot({ path: '/tmp/portfolio-' + locale + '-' + width + '-dark.png', animations: 'disabled' });
     assert.deepEqual(errors, []);
     console.log('Passed: ' + locale + ' ' + width + 'px, projects, images, links, filters, themes and motion');
