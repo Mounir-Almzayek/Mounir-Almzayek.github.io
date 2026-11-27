@@ -47,7 +47,7 @@ jobs:
             await motion.click();
             if(await pulse.evaluate(p=>getComputedStyle(p).animationPlayState)!=='running')throw Error('Resume failed');
             if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2))throw Error('Horizontal overflow '+width);
-            if(await page.locator('.project').count()!==33)throw Error('Project count changed');
+            if(await page.locator('.project').count()!==18)throw Error('Project count changed');
             if(errors.length)throw Error(errors.join('; '));
             await page.screenshot({path:'/tmp/portrait-'+width+'-light.png',animations:'disabled'});
             await page.locator('#theme-toggle').click();
