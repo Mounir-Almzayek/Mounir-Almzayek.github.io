@@ -230,6 +230,12 @@ try {
     });
     await motion.waitForFunction(() => !document.querySelector('.hero-role [data-typing-overlay]'));
     assert.ok((await role.innerText()).trim().length > 0);
+    await motion.waitForFunction(() => !!document.querySelector('.hero-role .recruiter-underline'));
+    const emphasis = role.locator('.recruiter-underline');
+    assert.equal(await emphasis.innerText(), locale === 'ar' ? 'مهندس ذكاء اصطناعي وبرمجيات' : 'AI & Software Engineer');
+    assert.equal(await emphasis.getAttribute('data-underline-direction'), locale === 'ar' ? 'rtl' : 'ltr');
+    assert.match(await emphasis.evaluate(node => getComputedStyle(node).backgroundImage), /B6F000/i);
+
     const target = motion.locator('#certifications .credential-card').first();
     const placeAt = fraction => target.evaluate((node, part) => {
       window.scrollTo({ top: node.getBoundingClientRect().top + scrollY - innerHeight * part, behavior: 'instant' });
