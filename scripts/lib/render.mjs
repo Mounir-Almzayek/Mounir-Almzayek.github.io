@@ -35,9 +35,16 @@ export function validateCatalogs(catalogs) {
   }
 }
 
-export function renderSite(templates, messages, locale) {
+export function renderSite(templates, messages, locale, versions = {}) {
   if (!Object.hasOwn(LOCALES, locale)) throw new Error('Unsupported locale: ' + locale);
-  const config = LOCALES[locale];
+  const config = {
+    ...LOCALES[locale],
+    cssVersion: versions.css ?? 'dev',
+    jsVersion: versions.js ?? 'dev',
+    fontLink: locale === 'ar'
+      ? '<link rel="stylesheet" href="/assets/css/arabic-fonts.css?v=' + (versions.fonts ?? 'dev') + '">\n'
+      : '',
+  };
   const usedMessages = new Set();
   const usedTemplates = new Set();
 
