@@ -99,18 +99,15 @@ document.getElementById('print')?.addEventListener('click', () => window.print()
 function initPortfolioMotion() {
   if (!Element.prototype.animate || !window.IntersectionObserver) return;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-  const fine = matchMedia('(hover: hover) and (pointer: fine)');
   const active = new Set();
   const seen = new WeakSet();
   const stage = document.querySelector('.profile-stage');
   const rtl = document.documentElement.dir === 'rtl';
   const inline = rtl ? 1 : -1;
-  const ease = 'cubic-bezier(.16, 1, .3, 1)';
+  const ease = 'cubic-bezier(.19, 1, .22, 1)';
   const targets = [...document.querySelectorAll(
     '.track > div, .sectionhead, .group-heading, .project, .job, .principle, .stack > div, .credential-card, .community-card, .cv-item, .contact h2, .contact .actions'
   )];
-  const cards = [...document.querySelectorAll('.project, .credential-card, .community-card, .cv-item')];
-  const hover = new Map();
   let introPlayed = false;
   let observer;
   let printing = false;
@@ -126,16 +123,10 @@ function initPortfolioMotion() {
     return animation;
   }
 
-  function cancelHover() {
-    for (const animation of hover.values()) animation.cancel();
-    hover.clear();
-  }
-
   function stop() {
     observer?.disconnect();
     for (const animation of active) animation.cancel();
     active.clear();
-    cancelHover();
   }
 
   function cancelFor(node, kinds) {
@@ -165,19 +156,19 @@ function initPortfolioMotion() {
         // Arabic shaping remains intact; animate whole lines, never individual glyphs.
         const copy = hero.querySelector('.hero-copy');
         [...(copy?.children || [])].forEach((node, i) => enter(node, {
-          delay: i * 75, x: i === 1 ? inline * 18 : 0, y: i === 1 ? 28 : 16,
-          duration: i === 1 ? 900 : 690, opacity: i === 1 ? .62 : .48
+          delay: i * 115, x: i === 1 ? inline * 25 : 0, y: i === 1 ? 42 : 26,
+          duration: i === 1 ? 1250 : 920, opacity: i === 1 ? .18 : .22
         }));
         if (stage?.dataset.motion === 'running') {
-          enter(stage, { delay: 100, y: 20, duration: 850 });
+          enter(stage, { delay: 160, y: 35, duration: 1120, opacity: .28 });
           const portrait = stage.querySelector('.profile-photo');
           // A short cinematic crop reveal stays inside the existing portrait frame.
           play(portrait, [
-            { clipPath: 'inset(0 0 22% 0)', scale: '1.035' },
+            { clipPath: 'inset(0 0 60% 0)', scale: '1.10' },
             { clipPath: 'inset(0 0 0 0)', scale: '1' }
-          ], { duration: 950, delay: 120, fill: 'backwards' }, 'portrait');
+          ], { duration: 1320, delay: 180, fill: 'backwards' }, 'portrait');
           [...stage.querySelectorAll('.specialty-item')].forEach((node, i) => {
-            enter(node, { delay: 310 + i * 90, x: (i % 2 ? -1 : 1) * 13, y: 10, duration: 760 });
+            enter(node, { delay: 440 + i * 130, x: (i % 2 ? -1 : 1) * 22, y: 18, duration: 920, opacity: .2 });
           });
         }
       }
@@ -193,35 +184,12 @@ function initPortfolioMotion() {
         const heading = node.matches('.sectionhead, .group-heading');
         const job = node.matches('.job');
         enter(node, {
-          delay: Math.min(i, 4) * 64, x: heading || job ? inline * 12 : 0,
-          y: heading ? 15 : 26, duration: heading ? 680 : 780
+          delay: Math.min(i, 4) * 100, x: heading || job ? inline * 20 : 0,
+          y: heading ? 25 : 38, duration: heading ? 880 : 1050, opacity: .18
         });
       });
-    }, { threshold: 0, rootMargin: '0px 0px -7% 0px' });
+    }, { threshold: 0, rootMargin: '0px 0px -12% 0px' });
     targets.forEach(node => { if (!seen.has(node)) observer.observe(node); });
-  }
-
-  // Animate existing media and cards only: no new overlays, elements or resting styles.
-  for (const card of cards) {
-    const media = card.querySelector('.product-shot img, .credential-visual img, .source-preview img');
-    const node = media || card;
-    function move(inside) {
-      if (!fine.matches || reduced.matches || document.hidden || printing) return;
-      const current = getComputedStyle(node).scale;
-      hover.get(card)?.cancel();
-      const animation = play(node, [
-        { scale: current === 'none' ? '1' : current },
-        { scale: inside ? (media ? '1.016' : '1.008') : '1' }
-      ], { duration: inside ? 460 : 340, fill: inside ? 'forwards' : 'none' }, 'hover');
-      if (animation) {
-        hover.set(card, animation);
-        if (!inside) animation.addEventListener('finish', () => {
-          if (hover.get(card) === animation) hover.delete(card);
-        }, { once: true });
-      }
-    }
-    card.addEventListener('pointerenter', () => move(true));
-    card.addEventListener('pointerleave', () => move(false));
   }
 
   // Lightweight tactile feedback for real interactions, including touch.
@@ -238,7 +206,6 @@ function initPortfolioMotion() {
   for (const button of document.querySelectorAll('[data-filter]')) {
     button.addEventListener('click', () => {
       if (reduced.matches) return;
-      cancelHover();
       const visible = [...document.querySelectorAll('.project:not([hidden])')].filter(card => {
         const bounds = card.getBoundingClientRect();
         return bounds.bottom > 0 && bounds.top < innerHeight;
@@ -267,10 +234,151 @@ function initPortfolioMotion() {
     }
   });
   reduced.addEventListener('change', () => { if (reduced.matches) stop(); else start(); });
-  fine.addEventListener('change', cancelHover);
   document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); else start(); });
   window.addEventListener('beforeprint', () => { printing = true; stop(); });
   window.addEventListener('afterprint', () => { printing = false; start(); });
   start();
 }
 initPortfolioMotion();
+
+// Cursor-driven depth, with a damped return to the exact original design.
+// Stable pointer surfaces; only their existing descendants move.
+function initInteractiveDepth() {
+  if (!window.requestAnimationFrame || !window.matchMedia) return;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  const precise = matchMedia('(hover: hover) and (pointer: fine)');
+  const stage = document.querySelector('.profile-stage');
+  const hero = document.querySelector('.hero');
+  const surfaces = new Map();
+  let frame = 0;
+  let last = 0;
+  let printing = false;
+
+  const enabled = () => precise.matches && !reduce.matches && !document.hidden && !printing;
+  const clamp = n => Math.max(-1, Math.min(1, n));
+  const transform = (x, y, rx, ry, scale = 1) =>
+    'perspective(850px) translate3d(' + x.toFixed(3) + 'px,' + y.toFixed(3) +
+    'px,0) rotateX(' + rx.toFixed(3) + 'deg) rotateY(' + ry.toFixed(3) + 'deg) scale(' + scale.toFixed(4) + ')';
+
+  function attach(surface, layers, allowed = () => true) {
+    if (!surface || !layers.length) return;
+    const state = {
+      surface, layers: layers.filter(layer => layer.node).map(layer => ({
+        ...layer, original: layer.node.style.transform
+      })),
+      allowed, x: 0, y: 0, strength: 0, tx: 0, ty: 0, ts: 0, rect: null
+    };
+    if (!state.layers.length) return;
+    surfaces.set(surface, state);
+    function move(event) {
+      if (!enabled() || !allowed() || event.pointerType !== 'mouse' || surface.closest('[hidden]')) return;
+      // The hit surface is never transformed by this particular effect.
+      state.rect ||= surface.getBoundingClientRect();
+      const r = state.rect;
+      if (r.width < 1 || r.height < 1) return;
+      state.tx = clamp((event.clientX - r.left) / r.width * 2 - 1);
+      state.ty = clamp((event.clientY - r.top) / r.height * 2 - 1);
+      state.ts = 1;
+      kick();
+    }
+    surface.addEventListener('pointerenter', event => { state.rect = null; move(event); });
+    surface.addEventListener('pointermove', move, { passive: true });
+    surface.addEventListener('pointerleave', () => release(state));
+    surface.addEventListener('pointercancel', () => release(state));
+  }
+
+  function restore(state) {
+    for (const layer of state.layers) layer.node.style.transform = layer.original;
+    state.x = state.y = state.strength = state.tx = state.ty = state.ts = 0;
+    state.rect = null;
+  }
+  function release(state) {
+    state.tx = state.ty = state.ts = 0;
+    state.rect = null;
+    if (state.strength > 0) kick();
+  }
+  function kick() {
+    if (!frame && enabled()) { last = 0; frame = requestAnimationFrame(tick); }
+  }
+  function tick(now) {
+    frame = 0;
+    if (!enabled()) { reset(); return; }
+    const dt = last ? Math.min(now - last, 40) : 16.7;
+    last = now;
+    const blend = 1 - Math.exp(-dt / 85);
+    let moving = false;
+    for (const state of surfaces.values()) {
+      if (!state.allowed() || state.surface.closest('[hidden]')) { if (state.strength || state.ts) restore(state); continue; }
+      if (!state.strength && !state.ts) continue;
+      state.x += (state.tx - state.x) * blend;
+      state.y += (state.ty - state.y) * blend;
+      state.strength += (state.ts - state.strength) * blend;
+      const unsettled = Math.abs(state.x - state.tx) + Math.abs(state.y - state.ty) + Math.abs(state.strength - state.ts) > .003;
+      if (!state.ts && !unsettled) { restore(state); continue; }
+      for (const layer of state.layers) {
+        layer.node.style.transform = layer.draw(state.x, state.y, state.strength);
+      }
+      moving ||= unsettled;
+    }
+    if (moving) frame = requestAnimationFrame(tick);
+  }
+  function reset() {
+    if (frame) cancelAnimationFrame(frame);
+    frame = 0; last = 0;
+    for (const state of surfaces.values()) if (state.strength || state.ts) restore(state);
+  }
+
+  // The existing hero becomes a reactive multi-layer scene, not a static hover.
+  if (hero && stage) {
+    const panel = stage.querySelector('.profile-panel');
+    const portrait = stage.querySelector('.profile-photo');
+    const badges = [...stage.querySelectorAll('.specialty-item')];
+    attach(hero, [
+      { node: panel, draw: (x, y, t) => transform(x * 9, y * 8, -y * 7, x * 8, 1 + t * .012) },
+      { node: portrait, draw: (x, y, t) => transform(x * -12, y * -10, 0, 0, 1 + t * .10) },
+      ...badges.map((node, index) => ({
+        node, draw: (x, y, t) => {
+          const depth = [18, 24, 30][index] || 20;
+          return transform(x * depth, y * depth * .65, -y * 3, x * 4, 1 + t * .018);
+        }
+      }))
+    ], () => stage.dataset.motion === 'running');
+    stage.querySelector('.motion-toggle')?.addEventListener('click', () => {
+      if (stage.dataset.motion === 'paused') {
+        const state = surfaces.get(hero);
+        if (state) restore(state);
+      }
+    });
+  }
+  // Project imagery tracks the pointer inside its existing clipped preview.
+  // Text and links remain in their original hitboxes and never drift.
+  for (const card of document.querySelectorAll('.project, .credential-card, .community-card, .cv-item')) {
+    const previews = [...card.querySelectorAll('.product-shot img, .credential-visual img, .source-preview img')];
+    const heading = card.querySelector('h3');
+    const layers = previews.map(node => ({
+      node, draw: (x, y, t) => transform(x * 10, y * 7, -y * 4, x * 5, 1 + t * .065)
+    }));
+    if (heading) layers.push({ node: heading, draw: (x, y, t) => transform(x * 5, y * 3, 0, 0, 1) });
+    attach(card, layers);
+  }
+  // Magnetic movement applies to the hero action group, not each hitbox.
+  const actions = hero?.querySelector('.actions');
+  if (actions) attach(actions, [...actions.querySelectorAll('.pill')].map(node => ({
+    node, draw: (x, y, t) => transform(x * 7, y * 5, 0, 0, 1 + t * .025)
+  })));
+
+  // A real scroll releases pointer state; no ongoing work when resting/offscreen.
+  window.addEventListener('scroll', () => {
+    for (const state of surfaces.values()) if (state.ts) release(state);
+  }, { passive: true });
+  window.addEventListener('resize', reset);
+  window.addEventListener('blur', reset);
+  reduce.addEventListener('change', reset);
+  precise.addEventListener('change', reset);
+  document.addEventListener('visibilitychange', reset);
+  document.addEventListener('focusin', reset);
+  document.querySelectorAll('[data-filter]').forEach(button => button.addEventListener('click', reset));
+  window.addEventListener('beforeprint', () => { printing = true; reset(); });
+  window.addEventListener('afterprint', () => { printing = false; });
+}
+initInteractiveDepth();
