@@ -36,6 +36,7 @@ function initTheme() {
     const label = dark ? button.dataset.labelLight : button.dataset.labelDark;
     button.setAttribute('aria-label', label);
     button.title = label;
+    // Keep the icon-only button intact; never replace its SVG children with text.
     try { localStorage.setItem('portfolio-theme', dark ? 'dark' : 'light'); } catch {}
   }
   let saved;

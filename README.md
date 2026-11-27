@@ -62,7 +62,7 @@ For browser checks, run `npm install --no-save --package-lock=false playwright@1
 
 ## Deployment and maintenance
 
-GitHub Pages serves the committed static output from `main`. The CI workflow checks locale-key parity, missing/unused messages, HTML escaping, template cycles, and exact synchronization of both generated pages before running browser regression tests. The check mode never rewrites files.
+GitHub Pages serves the committed static output from `main`. The CI workflow checks locale-key parity, missing/unused messages, HTML escaping, template cycles, and exact synchronization of both generated pages before running browser regression tests. The check mode never rewrites files. The build fingerprints CSS, JavaScript and Arabic fonts in both HTML routes, so browser caches cannot mix new markup with old assets. Regenerate both pages whenever these shared assets change.
 
 Browser tests cover both languages at four viewport sizes, project order and links, local assets, original CVs, filters, navigation, theme persistence, motion and social preview dimensions.
 

@@ -37,3 +37,14 @@ test('rejects unknown, cyclic and unused partials', () => {
   assert.throws(() => renderSite({page: 'static', orphan: 'unused'}, {}, 'en'), /Unused templates/);
   assert.throws(() => renderSite({page: 'static'}, {}, 'fr'), /Unsupported locale/);
 });
+
+test('renders matching asset fingerprints and Arabic-only font stylesheet', () => {
+  const templates = {page: '{{@fontLink}}<link href="portfolio.css?v={{@cssVersion}}"><script src="portfolio.js?v={{@jsVersion}}"></script>'};
+  const versions = {css:'111111111111',js:'222222222222',fonts:'333333333333'};
+  const en = renderSite(templates, {}, 'en', versions);
+  const ar = renderSite(templates, {}, 'ar', versions);
+  assert.match(en, /portfolio\.css\?v=111111111111/);
+  assert.match(ar, /portfolio\.js\?v=222222222222/);
+  assert.match(ar, /arabic-fonts\.css\?v=333333333333/);
+  assert.doesNotMatch(en, /arabic-fonts/);
+});

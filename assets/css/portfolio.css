@@ -369,13 +369,13 @@ html[lang=ar] .specialty-item strong,html[lang=ar] .specialty-item small { lette
 
 /* Compact navigation: one CTA, quiet utility controls, responsive menu. */
 .navlinks,.nav-primary,.nav-tools { display:flex;align-items:center;gap:18px }
-.navlinks { gap:14px;font-size:13px;line-height:1.35;color:var(--muted) }
-.nav-primary { gap:20px }
-.nav-primary > a:not(.pill) { padding:6px 0;white-space:nowrap }
+.navlinks { gap:16px;font-size:13px;line-height:1.35;color:var(--muted);min-width:0 }
+.nav-primary { gap:22px;flex-wrap:nowrap }
+.nav-primary > a:not(.pill) { display:inline-flex;align-items:center;padding:6px 0;white-space:nowrap }
 .nav-primary > a:not(.pill):hover { color:var(--ink) }
 .nav-primary .nav-contact { padding:7px 12px;font-size:13px;border-radius:4px;color:var(--ink);white-space:nowrap }
 .nav-primary .nav-contact:hover { background:var(--panel) }
-.nav-tools { gap:4px;padding-inline-start:12px;border-inline-start:1px solid var(--line) }
+.nav-tools { gap:4px;padding-inline-start:12px;border-inline-start:1px solid var(--line);flex-shrink:0 }
 .nav-tools > .language-toggle,.nav-tools > button {
   display:inline-flex;align-items:center;justify-content:center;flex:none;
   width:36px;height:36px;padding:0;border:0;border-radius:4px;
