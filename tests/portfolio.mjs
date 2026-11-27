@@ -28,6 +28,14 @@ try {
     } else {
       assert.equal(await page.locator('link[href*="arabic-fonts.css"]').count(), 0);
     }
+    assert.equal(await page.locator('.hero h1 span').evaluate(node => getComputedStyle(node).fontStyle), 'normal');
+    if (locale === 'ar') {
+      const inconsistent = await page.evaluate(() => [...document.body.querySelectorAll('*')].filter(node => [...node.childNodes].some(child => child.nodeType === Node.TEXT_NODE && child.textContent.trim())).filter(node => {
+        const style = getComputedStyle(node);
+        return !style.fontFamily.includes('IBM Plex Sans Arabic') || style.fontStyle !== 'normal';
+      }).map(node => node.tagName + ' ' + node.className));
+      assert.deepEqual(inconsistent, [], 'All Arabic-route text uses the unified upright typeface');
+    }
     const photo = page.locator('.profile-photo');
     await photo.evaluate(img => img.decode());
     const box = await photo.boundingBox();
@@ -92,6 +100,9 @@ try {
     const portrait = await photo.boundingBox();
     assert.ok(bounds[0].right <= bounds[1].x && Math.abs(bounds[0].y-bounds[1].y)<1, 'Top specialty cards aligned without overlap');
     assert.ok(bounds.every(card => card.bottom <= portrait.y || card.y >= portrait.y+portrait.height), 'Cards must stay outside the portrait');
+    const panel = await page.locator('.profile-panel').boundingBox();
+    assert.ok(bounds[0].x < panel.x && bounds[1].right > panel.x+panel.width && bounds[2].y > portrait.y+portrait.height, 'Cards protrude around the portrait as in reference');
+    assert.notEqual(await page.locator('.profile-image-frame').evaluate(node => getComputedStyle(node, '::before').backgroundImage), 'none');
     assert.match(await page.locator('#filter-result').innerText(), locale === 'ar' ? /مشاريع/ : /selected projects/i);
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2));
     await page.evaluate(() => scrollTo(0, 0));
