@@ -8,7 +8,7 @@
     "status": "existing genuine image"
   },
   {
-    "name": "The Saudi Cup",
+    "name": "Zaker",
     "status": "existing genuine image"
   },
   {
@@ -30,6 +30,10 @@
     ]
   },
   {
+    "name": "The Saudi Cup",
+    "status": "existing genuine image"
+  },
+  {
     "name": "Bin Taleb",
     "status": "existing genuine image"
   },
@@ -42,20 +46,7 @@
     "status": "existing genuine image"
   },
   {
-    "name": "Zaker",
-    "status": "captured",
-    "files": [
-      "assets/previews/sources/zaker-1.png",
-      "assets/previews/sources/zaker-2.png",
-      "assets/previews/sources/zaker-3.png"
-    ]
-  },
-  {
     "name": "Mazed POS",
-    "status": "existing genuine image"
-  },
-  {
-    "name": "King Abdulaziz Center Survey",
     "status": "existing genuine image"
   },
   {
@@ -64,7 +55,20 @@
   },
   {
     "name": "Visitors Management",
-    "status": "existing genuine image"
+    "status": "fallback",
+    "errors": [
+      {
+        "url": "https://visitors-rs.com/",
+        "error": "Error: Unusable page"
+      }
+    ]
+  },
+  {
+    "name": "Rai — National Center for Public Opinion Polls",
+    "status": "captured",
+    "kind": "Official client organization website · not the survey app",
+    "url": "https://ncpop.org.sa/",
+    "path": "assets/previews/sources/rai-official.jpg"
   },
   {
     "name": "Autonomous Deterministic Agent System",
@@ -101,10 +105,6 @@
   },
   {
     "name": "Advanced Neural Network Framework",
-    "status": "existing genuine image"
-  },
-  {
-    "name": "Solar Intelligence — Research Portal",
     "status": "existing genuine image"
   },
   {
