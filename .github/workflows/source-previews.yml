@@ -40,7 +40,7 @@ jobs:
           const esc=s=>s.replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;');
           async function capture(card,index){
             const name=card.match(/<h3>(.*?)<\/h3>/)?.[1]||'Project';
-            if(name==='Swimmer Craftsman'){
+            if((name==='Swimmer Craftsman'||name==='Zaker')&&card.includes('https://play-lh.googleusercontent.com/')){
               const urls=[...card.matchAll(/src="(https:\/\/play-lh\.googleusercontent\.com\/[^"]+)"/g)].map(m=>m[1]);
               let updated=card;const files=[];
               const ctx=await browser.newContext();
@@ -52,7 +52,7 @@ jobs:
                     const ext={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[type];
                     if(!res.ok()||!ext)continue;
                     const bytes=await res.body();if(bytes.length<2000)continue;
-                    const path='assets/previews/sources/swimmer-craftsman-'+(i+1)+'.'+ext;
+                    const path='assets/previews/sources/'+(name==='Zaker'?'zaker':'swimmer-craftsman')+'-'+(i+1)+'.'+ext;
                     fs.writeFileSync(path,bytes);updated=updated.replace(url,path);files.push(path);
                   }catch{}
                 }
@@ -73,7 +73,7 @@ jobs:
                 if(match&&new URL(match.href).hostname==='www.behance.net')candidates.unshift(match.href);
               }catch{}finally{await profile.close();}
             }
-            if(!candidates.length){report.push({name,status:'private/no public source',preview:'conceptual'});return;}
+            if(name==='M.O.U.N.I.R'||!candidates.length){report.push({name,status:'private/no public source',preview:'conceptual'});return;}
             const page=await browser.newPage({viewport:{width:1360,height:850},deviceScaleFactor:1,reducedMotion:'reduce',locale:'en-US'});
             const errors=[];
             try{
