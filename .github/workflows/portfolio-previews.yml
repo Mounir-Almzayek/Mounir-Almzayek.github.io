@@ -1,0 +1,101 @@
+name: Capture portfolio previews and smoke test
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/portfolio-previews.yml']
+permissions:
+  contents: write
+concurrency:
+  group: portfolio-previews
+  cancel-in-progress: false
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - name: Capture verified public pages
+        shell: bash
+        run: |
+          mkdir -p assets/previews
+          node --input-type=module <<'JS'
+          import { chromium } from 'playwright';
+          import fs from 'node:fs';
+          const browser = await chromium.launch({headless:true});
+          const targets = [
+            {name:'tebyan',url:'https://tebyan-website.tebyan-sy-official.workers.dev/ar',original:'https://tebyan-website.tebyan-sy-official.workers.dev/experience/09-mosque-prayer-display.avif',label:'Tebyan'},
+            {name:'liqaa',url:'https://www.byliqaa.me/ar',original:'https://www.byliqaa.me/images/landing/steps-invitation-arch.png',label:'Liqaa'}
+          ];
+          let html=fs.readFileSync('index.html','utf8');
+          const report=[];
+          for(const target of targets){
+            const page=await browser.newPage({viewport:{width:1440,height:900},deviceScaleFactor:1,locale:'ar',reducedMotion:'reduce'});
+            try{
+              const response=await page.goto(target.url,{waitUntil:'domcontentloaded',timeout:45000});
+              if(!response?.ok()) throw Error('HTTP '+response?.status());
+              await page.waitForLoadState('networkidle',{timeout:10000}).catch(()=>{});
+              await page.evaluate(()=>document.fonts.ready);
+              const title=await page.title();
+              const body=await page.locator('body').innerText();
+              if(body.trim().length<80 || /access denied|just a moment|verify you are human|application error|bad gateway|page not found/i.test(title+' '+body.slice(0,250))) throw Error('Page appears unavailable or blocked');
+              const path='assets/previews/'+target.name+'.jpg';
+              await page.screenshot({path,type:'jpeg',quality:88,animations:'disabled'});
+              const old='src="'+target.original+'"';
+              if(html.includes(old)) html=html.replace(old,'src="'+path+'"');
+              report.push({project:target.label,title,url:page.url(),status:'captured',path});
+            }catch(error){report.push({project:target.label,status:'failed',error:String(error)});}
+            finally{await page.close();}
+          }
+          fs.writeFileSync('index.html',html);
+          fs.writeFileSync('assets/previews/report.json',JSON.stringify(report,null,2)+'\n');
+          console.log(JSON.stringify(report,null,2));
+          await browser.close();
+          JS
+      - name: Responsive and interaction smoke tests
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/portfolio-http.log 2>&1 &
+          node --input-type=module <<'JS'
+          import {chromium} from 'playwright';
+          const browser=await chromium.launch();
+          for(const width of [1440,390]){
+            const page=await browser.newPage({viewport:{width,height:900},reducedMotion:'reduce'});
+            const errors=[];
+            page.on('pageerror',e=>errors.push(e.message));
+            await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
+            await page.locator('#theme-toggle').click();
+            if(await page.locator('html').getAttribute('data-theme')!=='dark')throw Error('Dark mode failed');
+            await page.locator('#theme-toggle').click();
+            await page.locator('[data-filter="ai"]').click();
+            if(await page.locator('.project:not([hidden])').count()===0)throw Error('AI filter failed');
+            await page.locator('[data-filter="all"]').click();
+            if(await page.locator('.project:not([hidden])').count()!==13)throw Error('Expected 13 project cards');
+            if(await page.locator('#resumes a[href*="drive.google.com/file/d/"]').count()!==4)throw Error('Missing original CV links');
+            if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2))throw Error('Horizontal overflow at '+width);
+            if(errors.length)throw Error(errors.join('; '));
+            await page.screenshot({path:'/tmp/portfolio-'+width+'.png',fullPage:true,animations:'disabled'});
+            await page.close();
+          }
+          await browser.close();
+          JS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: portfolio-verification
+          path: |
+            /tmp/portfolio-*.png
+            assets/previews/
+      - name: Commit real previews after checks
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html assets/previews/
+          if ! git diff --cached --quiet; then
+            git commit -m "Capture public project website previews"
+            git push origin HEAD:main
+          fi
