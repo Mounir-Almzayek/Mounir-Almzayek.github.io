@@ -4,7 +4,7 @@ import { readFile, access } from 'node:fs/promises';
 
 const origin = 'http://127.0.0.1:8765';
 const html = await readFile('index.html', 'utf8');
-for (const match of html.matchAll(/(?:src|href)="(assets\/[^"]+)"/g)) await access(match[1]);
+for (const match of html.matchAll(/(?:src|href)="(assets\/[^"]+)"/g)) await access(match[1].split('?')[0]);
 const browser = await chromium.launch();
 try {
   for (const locale of ['en', 'ar']) for (const width of [390, 768, 1024, 1440]) {
@@ -16,6 +16,9 @@ try {
     assert.equal(await page.locator('html').evaluate(node => getComputedStyle(node).direction), locale === 'ar' ? 'rtl' : 'ltr');
     assert.equal(await page.locator('.language-toggle').getAttribute('href'), locale === 'ar' ? '/' : '/ar/');
     assert.ok(await page.locator('.language-toggle').isVisible());
+    const versions = await page.locator('link[href*="portfolio.css"],script[src*="portfolio.js"],link[href*="arabic-fonts.css"]').evaluateAll(nodes => nodes.map(node => new URL(node.href || node.src).searchParams.get('v')));
+    assert.equal(versions.length, locale === 'ar' ? 3 : 2);
+    assert.ok(versions.every(version => /^[a-f0-9]{12}$/.test(version)), 'Versioned CSS, JS and local fonts');
     const nav = page.locator('.top nav');
     const theme = page.locator('#theme-toggle');
     const menu = page.locator('.menu-toggle');
@@ -44,6 +47,8 @@ try {
     } else {
       assert.equal(await menu.isVisible(), false);
       assert.equal(await navPrimary.locator('a:visible').count(), 4);
+      const boxes = await navPrimary.locator('a').evaluateAll(links => links.map(link => link.getBoundingClientRect().toJSON()).sort((a,b) => a.x-b.x));
+      assert.ok(boxes.slice(1).every((box,i) => box.x - boxes[i].right >= 12), 'Desktop links have visual separation');
     }
     if (locale === 'ar') {
       await page.evaluate(() => document.fonts.ready);
