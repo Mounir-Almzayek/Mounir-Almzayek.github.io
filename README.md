@@ -5,32 +5,68 @@
 
 A static, responsive engineering portfolio with 18 projects across four collections, professional experience, skills and four original résumés.
 
-## Structure
+## Architecture
 
-- `index.html` — canonical English source, semantic content and SEO metadata.
-- `ar/index.html` — generated Arabic RTL version.
-- `i18n/ar.json` and `scripts/generate-ar.mjs` — translation dictionary and static generator. Run `node scripts/generate-ar.mjs` after editing English content or translations. Technical names and terms remain in English.
-- `assets/css/portfolio.css` — editorial design, responsive layout, dark mode and portrait animation.
-- `assets/js/portfolio.js` — project filters, theme, image fallbacks and motion controls.
-- `assets/profile/` — original locally cached portrait and source metadata.
-- `assets/previews/` — original store screenshots, website captures and labeled repository previews; capture reports preserve provenance.
-- `assets/social/portfolio-preview.jpg` — 1200 × 630 homepage preview for sharing.
-- `tests/portfolio.mjs` — browser regression checks.
-- `cv/` — legacy résumé pages retained for existing external links; the homepage uses the original Drive PDFs.
+The English homepage and Arabic route are **generated outputs**, not independently maintained pages. Both are rendered at build time from the same HTML templates and separate locale catalogs.
 
-No frontend build or framework is required.
+```text
+src/templates/
+  page.html           Shared document layout and SEO
+  header.html         Navigation and language controls
+  intro.html          Hero, portrait and specialties
+  work.html           Project collection layout and ordering
+  products.html       Selected products
+  apps.html           Published mobile applications
+  professional.html   Professional and field systems
+  engineering.html    AI and engineering lab
+  about.html          Experience, approach and toolkit
+  resumes.html        Original résumé links
+  contact.html        Contact and footer
+i18n/
+  en.json             English content
+  ar.json             Arabic content
+scripts/
+  build.mjs           Build/check both pages
+  lib/render.mjs      Locale config, safe rendering, validation
+assets/
+  css/                Shared design and Arabic web fonts
+  js/portfolio.js     Shared, language-neutral interactions
+  profile/            Original portrait
+  previews/           Authentic project previews and provenance
+  social/             Open Graph preview
+tests/
+  render.test.mjs     Template/translation unit tests
+  portfolio.mjs       Browser regression tests
+index.html            Generated English homepage
+ar/index.html         Generated Arabic homepage
+```
 
-## Local development
+Both routes share identical project structure, links, ordering, styles and behavior. Arabic applies RTL and IBM Plex Sans Arabic; technical terms and product names remain shared where appropriate. English remains the default. Locale-specific UI labels, including theme, motion and project counters, are rendered into data attributes instead of duplicated in browser JavaScript.
 
-Run `python -m http.server 8000` at the repository root and open http://localhost:8000/.
+## Editing and local development
 
-For automated checks, run `npm install --no-save --package-lock=false playwright@1.56.1`, `npx playwright install chromium`, start the HTTP server on port 8765, then run `node tests/portfolio.mjs`.
+- Edit the relevant template in `src/templates/` to change layout, project order, links or assets.
+- Edit the same stable message key in `i18n/en.json` and `i18n/ar.json` to change localized copy. Common repeated labels live under `common.*`; project-specific copy under `projects.*`.
+- Run the build, then commit the source files and both generated HTML pages together. Do not edit generated HTML manually.
+
+```sh
+node scripts/build.mjs
+node scripts/build.mjs --check
+node --test tests/render.test.mjs
+python -m http.server 8000
+```
+
+Open http://localhost:8000/ or http://localhost:8000/ar/. No frontend framework, bundler or production Node server is needed.
+
+For browser checks, run `npm install --no-save --package-lock=false playwright@1.56.1`, `npx playwright install chromium`, start the HTTP server on port 8765, then run `node tests/portfolio.mjs`.
 
 ## Deployment and maintenance
 
-GitHub Pages serves the root of `main`. Portfolio quality checks run on pull requests and relevant changes to main. Tests verify both languages at four viewport sizes, all 18 projects, local assets, internal links, original CV links, filters, theme, motion and social preview dimensions. They do not modify repository files.
+GitHub Pages serves the committed static output from `main`. The CI workflow checks locale-key parity, missing/unused messages, HTML escaping, template cycles, and exact synchronization of both generated pages before running browser regression tests. The check mode never rewrites files.
 
-Run **Generate portfolio social preview** manually on main after a meaningful homepage redesign. It captures the actual homepage and updates the Open Graph image. Old one-off capture workflows have been retired; Git history retains their implementation.
+Browser tests cover both languages at four viewport sizes, project order and links, local assets, original CVs, filters, navigation, theme persistence, motion and social preview dimensions.
+
+Run **Generate portfolio social preview** manually on main after a meaningful homepage redesign. It captures the actual homepage without modifying translation source files. Historical preview assets and legacy `cv/` URLs are retained for existing external links; the homepage uses the original Drive PDFs.
 
 ## Original résumés
 
