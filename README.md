@@ -1,12 +1,15 @@
 # Mounir Almzayek — Engineering Portfolio
 
-**Live website:** https://mounir-almzayek.github.io/
+**English (default):** https://mounir-almzayek.github.io/  
+**Arabic:** https://mounir-almzayek.github.io/ar/
 
 A static, responsive engineering portfolio with 18 projects across four collections, professional experience, skills and four original résumés.
 
 ## Structure
 
-- `index.html` — semantic page content, project cards, SEO and Open Graph metadata.
+- `index.html` — canonical English source, semantic content and SEO metadata.
+- `ar/index.html` — generated Arabic RTL version.
+- `i18n/ar.json` and `scripts/generate-ar.mjs` — translation dictionary and static generator. Run `node scripts/generate-ar.mjs` after editing English content or translations. Technical names and terms remain in English.
 - `assets/css/portfolio.css` — editorial design, responsive layout, dark mode and portrait animation.
 - `assets/js/portfolio.js` — project filters, theme, image fallbacks and motion controls.
 - `assets/profile/` — original locally cached portrait and source metadata.
@@ -25,7 +28,7 @@ For automated checks, run `npm install --no-save --package-lock=false playwright
 
 ## Deployment and maintenance
 
-GitHub Pages serves the root of `main`. Portfolio quality checks run on pull requests and relevant changes to main. Tests verify four viewport sizes, all 18 projects, local assets, internal links, original CV links, filters, theme, motion and social preview dimensions. They do not modify repository files.
+GitHub Pages serves the root of `main`. Portfolio quality checks run on pull requests and relevant changes to main. Tests verify both languages at four viewport sizes, all 18 projects, local assets, internal links, original CV links, filters, theme, motion and social preview dimensions. They do not modify repository files.
 
 Run **Generate portfolio social preview** manually on main after a meaningful homepage redesign. It captures the actual homepage and updates the Open Graph image. Old one-off capture workflows have been retired; Git history retains their implementation.
 
