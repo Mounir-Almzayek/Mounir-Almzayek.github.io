@@ -1,7 +1,5 @@
 'use strict';
 
-const isArabic = document.documentElement.lang === 'ar';
-
 function initProjectFilters() {
   const buttons = [...document.querySelectorAll('[data-filter]')];
   const cards = [...document.querySelectorAll('.project[data-tags]')];
@@ -15,7 +13,7 @@ function initProjectFilters() {
     });
     groups.forEach(group => { group.hidden = !group.querySelector('.project:not([hidden])'); });
     buttons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.filter === category)));
-    if (result) result.textContent = isArabic ? count + ' مشاريع مختارة' : count + ' selected projects';
+    if (result) result.textContent = result.dataset.countLabel.replace('{count}', String(count));
   }
   buttons.forEach(button => button.addEventListener('click', () => filter(button.dataset.filter)));
   filter('all');
@@ -35,7 +33,7 @@ function initTheme() {
   function setTheme(dark) {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
     button.setAttribute('aria-pressed', String(dark));
-    const label = isArabic ? (dark ? 'الوضع الفاتح' : 'الوضع الداكن') : (dark ? 'Light mode' : 'Dark mode');
+    const label = dark ? button.dataset.labelLight : button.dataset.labelDark;
     button.setAttribute('aria-label', label);
     button.title = label;
     try { localStorage.setItem('portfolio-theme', dark ? 'dark' : 'light'); } catch {}
@@ -56,12 +54,11 @@ function initPortraitMotion() {
     const active = enabled && !reduced.matches;
     stage.dataset.motion = active ? 'running' : 'paused';
     toggle.setAttribute('aria-pressed', String(active));
-    toggle.querySelector('span').textContent = isArabic ? (active ? 'الحركة مفعّلة' : 'الحركة متوقفة') : (active ? 'Motion on' : 'Motion off');
+    toggle.querySelector('span').textContent = active ? toggle.dataset.labelOn : toggle.dataset.labelOff;
   }
   update();
   toggle.addEventListener('click', () => { enabled = !enabled; update(); });
   reduced.addEventListener('change', update);
-
 }
 
 function initNavigation() {
