@@ -461,11 +461,12 @@ html[lang=ar] .specialty-item strong,html[lang=ar] .specialty-item small { lette
 @media(max-width:900px) { .nav-ready .nav-primary { max-height:calc(100dvh - 76px);overflow:auto } }
 
 
-/* Ambient hero field: no grid items, hit testing, or layout changes. */
-.hero { position:relative;isolation:isolate }
-.hero-ambient { position:absolute;inset:0;width:100%;height:100%;display:block;z-index:-1;pointer-events:none;user-select:none }
-@media(prefers-reduced-motion:reduce) { .hero-ambient { opacity:.55 } }
-@media print { .hero-ambient { display:none!important } }
+/* The live viewport grid replaces, rather than doubles, the CSS fallback. */
+body[data-live-grid] { isolation:isolate;background-image:none }
+.page-grid { position:fixed;inset:0;width:100%;height:100%;display:block;z-index:-1;pointer-events:none;user-select:none }
+.page-grid[hidden] { display:none }
+@media(prefers-reduced-motion:reduce) { .page-grid { display:none!important } body[data-live-grid] { background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px) } }
+@media print { .page-grid { display:none!important } }
 
 
 /* Circular theme transition: reveal the real new page from the toggle center.
