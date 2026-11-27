@@ -775,3 +775,101 @@ function initPageGrid() {
   resize();
 }
 initPageGrid();
+
+
+// Editorial accents: intentionally limited to evidence a recruiter can scan.
+// Wait for typewriter and entry motion before decorating original text nodes.
+function initRecruiterAccents() {
+  const root = document.documentElement;
+  const ar = root.lang === 'ar';
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  const pending = [];
+  const select = (selector, en, arabic = en) => {
+    const node = document.querySelector(selector);
+    if (node) pending.push({ node, phrase: ar ? arabic : en });
+  };
+  const project = (name, en, arabic = en, heading = false) => {
+    const title = [...document.querySelectorAll('.projectbody h3')].find(h => h.textContent.trim() === name);
+    const node = heading ? title : title?.closest('.projectbody')?.querySelector('p');
+    if (node) pending.push({ node, phrase: ar ? arabic : en });
+  };
+  select('.hero-role', 'AI & Software Engineer', 'مهندس ذكاء اصطناعي وبرمجيات');
+  select('.hero-copy .lede', 'reliable mobile products', 'تطبيقات جوال موثوقة');
+  project('Tebyan', 'constrained hardware', 'محدودية موارد الأجهزة');
+  project('The Saudi Cup', 'The Saudi Cup', 'The Saudi Cup', true);
+  select('[data-role="aram"] .role-details li:first-child', 'ERP and payment workflows', 'عمليات ERP والدفع');
+  select('[data-role="ovaluate"] h3', 'Generative AI Engineer');
+  select('[data-role="rs4it-ai"] h3', 'LLM Agents & Automation');
+  select('[data-role="rs4it-ai"] .role-details li:nth-child(2)', 'controlled tool execution', 'التنفيذ المنضبط للأدوات');
+  select('[data-role="rs4it-flutter"] .role-details li:first-child', '6+ production Flutter applications', 'أكثر من 6 تطبيقات Flutter إنتاجية');
+  select('[data-role="rs4it-flutter"] .role-details li:nth-child(2)', 'offline-first workflows', 'تدفقات Offline-first');
+  select('#toolkit .stack > div:first-child p', 'LangChain, LangGraph, RAG, MCP');
+  select('[data-cert="rag"] h3', 'Retrieval Augmented Generation (RAG)');
+  select('[data-volunteer="rbcs-academic"] h3', 'Team Lead');
+  select('#contact h2', 'that matters', 'يصنع فرقاً');
+
+  function mark({ node, phrase }, instant) {
+    const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+    for (let text = walker.nextNode(); text; text = walker.nextNode()) {
+      const index = text.data.toLocaleLowerCase().indexOf(phrase.toLocaleLowerCase());
+      if (index < 0) continue;
+      const range = document.createRange();
+      range.setStart(text, index);
+      range.setEnd(text, index + phrase.length);
+      const span = document.createElement('span');
+      span.className = 'recruiter-accent';
+      span.dataset.inkDirection = /^[\s\u0600-\u06ff]+/.test(phrase) ? 'rtl' : 'ltr';
+      if (instant) span.dataset.inkStatic = '';
+      range.surroundContents(span);
+      return true;
+    }
+    return false;
+  }
+
+  let frame = 0;
+  function scan() {
+    frame = 0;
+    if (document.hidden) return;
+    for (let i = pending.length - 1; i >= 0; i--) {
+      const entry = pending[i];
+      const { node } = entry;
+      if (node.closest('[hidden], [data-motion-typing], [data-motion-pending]')) continue;
+      const bounds = node.getBoundingClientRect();
+      const instant = reduce.matches || bounds.bottom <= 0;
+      const owner = node.closest('.job, .project, .credential-card, .community-card, .stack > div, .contact h2');
+      const visible = bounds.top <= innerHeight * .75 ||
+        (scrollY + innerHeight >= root.scrollHeight - 4 && bounds.top < innerHeight);
+      if (!instant && !visible) continue;
+      if (!instant && owner?.getAnimations().some(animation => animation.id === 'portfolio-motion-reveal' && animation.playState === 'running')) {
+        // Wait on actual animation completion rather than guessing its duration.
+        for (const animation of owner.getAnimations().filter(a => a.id === 'portfolio-motion-reveal' && a.playState === 'running')) {
+          if (watched.has(animation)) continue;
+          watched.add(animation);
+          animation.finished.then(schedule, schedule);
+        }
+        continue;
+      }
+      mark(entry, instant);
+      pending.splice(i, 1);
+    }
+    if (!pending.length) {
+      observer?.disconnect();
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      reduce.removeEventListener('change', schedule);
+      document.removeEventListener('visibilitychange', schedule);
+    }
+  }
+  const watched = new WeakSet();
+  const schedule = () => { if (!frame && pending.length) frame = requestAnimationFrame(scan); };
+  const observer = typeof MutationObserver === 'function' ? new MutationObserver(schedule) : null;
+  observer?.observe(document.querySelector('main') || document.body, {
+    subtree: true, attributes: true, attributeFilter: ['data-motion-typing', 'data-motion-pending', 'hidden']
+  });
+  window.addEventListener('scroll', schedule, { passive: true });
+  window.addEventListener('resize', schedule, { passive: true });
+  reduce.addEventListener('change', schedule);
+  document.addEventListener('visibilitychange', schedule);
+  schedule();
+}
+initRecruiterAccents();
