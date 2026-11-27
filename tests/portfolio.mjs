@@ -152,11 +152,24 @@ try {
       const b = node.getBoundingClientRect();
       return [b.x + scrollX, b.y + scrollY, b.width, b.height];
     });
+    // Test the actual pointer position, not a one-shot hover animation.
+    await page.mouse.move(1, 1);
+    await page.waitForFunction(() => document.querySelector('.profile-photo').style.transform === '');
+    await page.waitForTimeout(1400);
     const photoBefore = await documentBounds();
-    await photo.hover();
-    await page.waitForTimeout(400);
+    const photoBox = await photo.boundingBox();
+    await page.mouse.move(photoBox.x + photoBox.width * .78, photoBox.y + photoBox.height * .65);
+    await page.waitForFunction(() => document.querySelector('.profile-photo').style.transform.includes('perspective'));
+    await page.waitForTimeout(300);
+    const firstTransform = await photo.evaluate(node => node.style.transform);
+    await page.mouse.move(photoBox.x + photoBox.width * .22, photoBox.y + photoBox.height * .35);
+    await page.waitForFunction(previous => document.querySelector('.profile-photo').style.transform !== previous, firstTransform);
+    await page.waitForTimeout(250);
+    assert.notEqual(await photo.evaluate(node => node.style.transform), firstTransform, 'Portrait responds to pointer position');
+    await page.mouse.move(1, 1);
+    await page.waitForFunction(() => document.querySelector('.profile-photo').style.transform === '');
     const photoAfter = await documentBounds();
-    assert.ok(photoAfter.every((value, i) => Math.abs(value - photoBefore[i]) < 1), 'Portrait remains fixed in document coordinates');
+    assert.ok(photoAfter.every((value, i) => Math.abs(value - photoBefore[i]) < 1), 'Portrait returns to its original geometry');
     const bounds = await strip.locator('.specialty-item').evaluateAll(nodes => nodes.map(node => {const r=node.getBoundingClientRect(); return {x:r.x,y:r.y,right:r.right,bottom:r.bottom};}));
     const portrait = await photo.boundingBox();
     assert.ok(bounds[0].right <= bounds[1].x && Math.abs(bounds[0].y-bounds[1].y)<1, 'Top specialty cards aligned without overlap');
@@ -202,6 +215,8 @@ try {
   await page.goto(origin, { waitUntil: 'domcontentloaded' });
   assert.equal(await page.locator('.signal-runner').evaluate(p => getComputedStyle(p).animationName), 'none');
   assert.equal(await page.locator('.motion-toggle').isVisible(), false);
+  await page.locator('.profile-photo').hover();
+  assert.equal(await page.locator('.profile-photo').evaluate(node => node.style.transform), '', 'Reduced motion disables pointer depth');
   assert.equal(await page.locator('meta[property="og:image"]').count(), 1);
   const url = await page.locator('meta[property="og:image"]').getAttribute('content');
   const image = await page.evaluate(async path => {
