@@ -1,0 +1,78 @@
+import assert from 'node:assert/strict';
+import { chromium } from 'playwright';
+import { readFile, access } from 'node:fs/promises';
+
+const origin = 'http://127.0.0.1:8765';
+const html = await readFile('index.html', 'utf8');
+for (const match of html.matchAll(/(?:src|href)="(assets\/[^"]+)"/g)) await access(match[1]);
+const browser = await chromium.launch();
+try {
+  for (const width of [390, 768, 1024, 1440]) {
+    const page = await browser.newPage({ viewport: { width, height: 900 }, reducedMotion: 'no-preference' });
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.goto(origin, { waitUntil: 'domcontentloaded' });
+    const photo = page.locator('.profile-photo');
+    await photo.evaluate(img => img.decode());
+    const box = await photo.boundingBox();
+    assert.ok(box && box.width >= (width === 1440 ? 375 : 210), 'Portrait width at ' + width);
+    assert.equal(await photo.evaluate(img => getComputedStyle(img).filter), 'none');
+    assert.equal(await page.locator('.project').count(), 18);
+    assert.equal(await page.locator('.project-group').count(), 4);
+    assert.equal(await page.locator('.project figure').count(), 18);
+    assert.equal(await page.locator('[data-project-group="archive"]').count(), 0);
+    assert.equal(await page.locator('#resumes a[href*="drive.google.com/file/d/"]').count(), 4);
+    assert.equal(await page.locator('[data-store-gallery="bin-taleb"] img').count(), 3);
+    assert.equal(await page.locator('[data-store-gallery="zaker"] img').count(), 3);
+    assert.equal(await page.locator('[data-visitors-preview] a').getAttribute('href'), 'https://visitors-rs.com/');
+    assert.ok(await page.locator('a[href*="com.rs4it.qomel.visitors"]').count());
+    assert.equal(await page.locator('[data-project-group="apps"] .project h3').first().innerText(), 'Zaker');
+    for (const img of await page.locator('img[src^="assets/"]').all()) {
+      await img.evaluate(async image => { image.loading = 'eager'; await image.decode(); });
+    }
+    const duplicates = await page.evaluate(() => {
+      const ids = [...document.querySelectorAll('[id]')].map(node => node.id);
+      return ids.filter((id, index) => ids.indexOf(id) !== index);
+    });
+    assert.deepEqual(duplicates, []);
+    const missing = await page.evaluate(() => [...document.querySelectorAll('a[href^="#"]')].map(a => a.getAttribute('href')).filter(id => id !== '#' && !document.getElementById(id.slice(1))));
+    assert.deepEqual(missing, []);
+    await page.locator('[data-filter="published"]').click();
+    assert.equal(await page.locator('.project:not([hidden])').count(), 5);
+    await page.locator('[data-filter="ai"]').click();
+    assert.ok(await page.locator('.project:not([hidden])').count() > 0);
+    await page.locator('[data-filter="all"]').click();
+    assert.equal(await page.locator('.project:not([hidden])').count(), 18);
+    const pulse = page.locator('.orbit-pulse').first();
+    assert.equal(await pulse.evaluate(p => getComputedStyle(p).animationName), 'portrait-signal-flow');
+    const before = await pulse.evaluate(p => getComputedStyle(p).strokeDashoffset);
+    await page.waitForTimeout(300);
+    assert.notEqual(await pulse.evaluate(p => getComputedStyle(p).strokeDashoffset), before);
+    await page.locator('.motion-toggle').click();
+    assert.equal(await pulse.evaluate(p => getComputedStyle(p).animationPlayState), 'paused');
+    await page.locator('.motion-toggle').click();
+    assert.equal(await pulse.evaluate(p => getComputedStyle(p).animationPlayState), 'running');
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2));
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.screenshot({ path: '/tmp/portfolio-' + width + '-light.png', animations: 'disabled' });
+    await page.locator('#theme-toggle').click();
+    assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
+    await page.screenshot({ path: '/tmp/portfolio-' + width + '-dark.png', animations: 'disabled' });
+    assert.deepEqual(errors, []);
+    console.log('Passed: ' + width + 'px, projects, images, links, filters, themes and motion');
+    await page.close();
+  }
+  const page = await browser.newPage({ reducedMotion: 'reduce' });
+  await page.goto(origin, { waitUntil: 'domcontentloaded' });
+  assert.equal(await page.locator('.orbit-pulse').first().evaluate(p => getComputedStyle(p).animationName), 'none');
+  assert.equal(await page.locator('.portrait-halo').evaluate(p => getComputedStyle(p).animationName), 'none');
+  assert.equal(await page.locator('meta[property="og:image"]').count(), 1);
+  const url = await page.locator('meta[property="og:image"]').getAttribute('content');
+  const image = await page.evaluate(async path => {
+    const img = new Image(); img.src = path; await img.decode(); return [img.naturalWidth, img.naturalHeight];
+  }, new URL(url).pathname);
+  assert.deepEqual(image, [1200, 630]);
+  console.log('Passed: reduced motion and Open Graph image');
+} finally {
+  await browser.close();
+}
