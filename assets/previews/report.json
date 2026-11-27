@@ -21,6 +21,18 @@
     "path": "assets/previews/mazeed.jpg"
   },
   {
+    "project": "Wusol",
+    "status": "failed",
+    "error": "Error: HTTP 530"
+  },
+  {
+    "project": "Ovaluate",
+    "title": "Free Online Access – AI-Driven AVM Property Valuation Tool",
+    "url": "https://www.ovaluate.com/",
+    "status": "captured",
+    "path": "assets/previews/ovaluate.jpg"
+  },
+  {
     "project": "The Saudi Cup",
     "url": "https://play.google.com/store/apps/details?id=com.app.saudicup",
     "status": "captured",
