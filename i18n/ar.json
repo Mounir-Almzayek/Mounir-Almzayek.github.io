@@ -254,13 +254,16 @@
     "TypeScript, Next.js, Fastify, NestJS, FastAPI, PostgreSQL, MongoDB, Redis, Supabase, Docker.",
     "Flutter / Mobile",
     "Full-Stack / Backend",
-    "Software Engineer"
+    "Software Engineer",
+    "AR"
   ],
   "attrs": {
     "Main navigation": "التنقل الرئيسي",
     "Profile portrait and engineering specialties": "الصورة الشخصية والتخصصات الهندسية",
     "Engineering specialties": "التخصصات الهندسية",
     "Filter projects": "تصفية المشاريع",
-    "Toggle portrait animation": "تبديل الحركة حول الصورة"
+    "Toggle portrait animation": "تبديل الحركة حول الصورة",
+    "Dark mode": "الوضع الداكن",
+    "Navigation menu": "قائمة التنقل"
   }
 }
