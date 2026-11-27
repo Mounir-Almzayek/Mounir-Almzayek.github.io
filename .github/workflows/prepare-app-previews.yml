@@ -1,0 +1,31 @@
+name: Prepare cropped app previews
+on:
+  push:
+    branches: [content/experience-and-previews]
+    paths: ['.github/workflows/prepare-app-previews.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  crop:
+    if: github.ref == 'refs/heads/content/experience-and-previews'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install Pillow==11.3.0
+      - run: python scripts/crop-app-previews.py
+      - run: node scripts/build.mjs && node scripts/build.mjs --check
+      - name: Commit verified preview derivatives
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/previews/cropped src/templates/apps.html index.html ar/index.html
+          git commit -m "Trim Android letterbox bands from original store previews"
+          git push origin HEAD:content/experience-and-previews

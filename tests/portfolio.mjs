@@ -75,6 +75,11 @@ try {
     const box = await photo.boundingBox();
     assert.ok(box && box.width >= (width === 1440 ? 375 : 210), 'Portrait width at ' + width);
     assert.equal(await photo.evaluate(img => getComputedStyle(img).filter), 'none');
+    assert.equal(await page.locator('#experience [data-role]').count(), 6);
+    assert.equal(await page.locator('#certifications [data-cert]').count(), 8);
+    assert.equal(await page.locator('#volunteering [data-volunteer]').count(), 4);
+    assert.equal(await page.locator('.credential-code').count(), 7);
+    assert.equal(await page.locator('.app-shot .store-gallery img[src*="/cropped/"]').count(), 15);
     assert.equal(await page.locator('.project').count(), 18);
     assert.equal(await page.locator('.project-group').count(), 4);
     assert.deepEqual(await page.locator('[data-project-group="engineering"] .project h3').allTextContents(), [
