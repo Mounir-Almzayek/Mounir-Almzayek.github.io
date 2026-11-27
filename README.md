@@ -1,18 +1,33 @@
 # Mounir Almzayek — Engineering Portfolio
 
-English-first, responsive personal portfolio for AI systems, mobile and backend engineering.
+**Live website:** https://mounir-almzayek.github.io/
 
-**Live site:** https://mounir-almzayek.github.io/
+A static, responsive engineering portfolio with 18 projects across four collections, professional experience, skills and four original résumés.
 
-## Design and development
+## Structure
 
-Warm monochrome editorial design with a technical square grid, serif headings, natural-color GitHub avatar, color project imagery, light/dark modes, responsive project cards, filters, accessible keyboard focus and reduced-motion support.
+- `index.html` — semantic page content, project cards, SEO and Open Graph metadata.
+- `assets/css/portfolio.css` — editorial design, responsive layout, dark mode and portrait animation.
+- `assets/js/portfolio.js` — project filters, theme, image fallbacks and motion controls.
+- `assets/profile/` — original locally cached portrait and source metadata.
+- `assets/previews/` — original store screenshots, website captures and labeled repository previews; capture reports preserve provenance.
+- `assets/social/portfolio-preview.jpg` — 1200 × 630 homepage preview for sharing.
+- `tests/portfolio.mjs` — browser regression checks.
+- `cv/` — legacy résumé pages retained for existing external links; the homepage uses the original Drive PDFs.
 
-Run `python -m http.server 8000` from the repository root and open http://localhost:8000/. The static site requires no build tools.
+No frontend build or framework is required.
 
-## Projects and real previews
+## Local development
 
-The site presents 18 project cards across four collections. Previously archived projects are no longer displayed; their source repositories are unchanged. Every card has a visual preview: an authentic product/store image or a clearly labeled conceptual engineering illustration. Public product and store links are distinguished from the user's specific contribution; private sources are not linked. Tebyan, Liqaa, Mazeed and Ovaluate have real browser screenshots; Saudi Cup, Bin Taleb, Swimmer, Swimmer Craftsman and Zaker use original Google Play images. Public source-repository screenshots are clearly distinguished from application screenshots. Wusol has a conceptual fallback because its official website returned HTTP 530 and its app hostname was unresolved during capture. The private personal-agent project M.O.U.N.I.R uses a conceptual illustration and a public overview link. Capture results are recorded in `assets/previews/report.json`.
+Run `python -m http.server 8000` at the repository root and open http://localhost:8000/.
+
+For automated checks, run `npm install --no-save --package-lock=false playwright@1.56.1`, `npx playwright install chromium`, start the HTTP server on port 8765, then run `node tests/portfolio.mjs`.
+
+## Deployment and maintenance
+
+GitHub Pages serves the root of `main`. Portfolio quality checks run on pull requests and relevant changes to main. Tests verify four viewport sizes, all 18 projects, local assets, internal links, original CV links, filters, theme, motion and social preview dimensions. They do not modify repository files.
+
+Run **Generate portfolio social preview** manually on main after a meaningful homepage redesign. It captures the actual homepage and updates the Open Graph image. Old one-off capture workflows have been retired; Git history retains their implementation.
 
 ## Original résumés
 
@@ -21,14 +36,4 @@ The site presents 18 project cards across four collections. Previously archived 
 - [Full Stack Developer (PDF)](https://drive.google.com/file/d/1ouUB6ya0AmSmAkgcGvieEnZ8rs05EJ7g/view)
 - [Software Engineer — Comprehensive (PDF)](https://drive.google.com/file/d/1ozoNWNlehc8GAY3pSyxdtsK2wCMXKw-Q/view)
 
-The homepage links directly to the original Drive files for viewing and downloading, without creating replacement CVs. All four were verified to have anyone-reader access. Legacy HTML résumé pages remain for compatibility but are no longer linked from the homepage.
-
-## Verification and deployment
-
-GitHub Pages deploys from `main` / root. The **Capture portfolio previews and smoke test** workflow captures live previews using Playwright, verifies the layout at 1440px and 390px, checks the four collections, all 18 previews, filters, dark mode, original CV links and JavaScript errors, and commits the captured assets after successful tests. Its verification artifact contains the browser screenshots and capture report.
-
-A GitHub Actions bot commit may not itself trigger branch-based Pages deployment; verify a subsequent Pages run after refreshing preview assets. No private project source or live application data are embedded.
-
-A sitemap and robots.txt support search discovery.
-
-The source-previews workflow captures remaining public source pages and original repository assets; its report is stored at `assets/previews/sources/report.json`. It does not capture private source or authenticated application data.
+Original previews and historical capture reports are retained so previously shared image URLs remain available. Removed portfolio cards do not imply deletion of the associated repositories.
