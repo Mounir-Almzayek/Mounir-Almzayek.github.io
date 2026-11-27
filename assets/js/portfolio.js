@@ -35,7 +35,9 @@ function initTheme() {
   function setTheme(dark) {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
     button.setAttribute('aria-pressed', String(dark));
-    button.textContent = isArabic ? (dark ? 'الوضع الفاتح' : 'الوضع الداكن') : (dark ? 'Light mode' : 'Dark mode');
+    const label = isArabic ? (dark ? 'الوضع الفاتح' : 'الوضع الداكن') : (dark ? 'Light mode' : 'Dark mode');
+    button.setAttribute('aria-label', label);
+    button.title = label;
     try { localStorage.setItem('portfolio-theme', dark ? 'dark' : 'light'); } catch {}
   }
   let saved;
@@ -62,7 +64,33 @@ function initPortraitMotion() {
 
 }
 
+function initNavigation() {
+  const nav = document.querySelector('.top nav');
+  const toggle = nav?.querySelector('.menu-toggle');
+  const links = nav?.querySelector('.nav-primary');
+  if (!nav || !toggle || !links) return;
+  nav.classList.add('nav-ready');
+  const mobile = window.matchMedia('(max-width: 700px)');
+  function setOpen(open, focus = false) {
+    toggle.setAttribute('aria-expanded', String(open));
+    links.classList.toggle('is-open', open);
+    if (focus) toggle.focus();
+  }
+  toggle.addEventListener('click', () => setOpen(toggle.getAttribute('aria-expanded') !== 'true'));
+  links.addEventListener('click', event => {
+    if (event.target.closest('a') && mobile.matches) setOpen(false);
+  });
+  document.addEventListener('click', event => {
+    if (!nav.contains(event.target)) setOpen(false);
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') setOpen(false, true);
+  });
+  mobile.addEventListener('change', () => setOpen(false));
+}
+
 initTheme();
+initNavigation();
 initProjectFilters();
 initImageFallbacks();
 initPortraitMotion();
