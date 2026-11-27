@@ -72,6 +72,12 @@ try {
     assert.equal(await photo.evaluate(img => getComputedStyle(img).filter), 'none');
     assert.equal(await page.locator('.project').count(), 18);
     assert.equal(await page.locator('.project-group').count(), 4);
+    assert.deepEqual(await page.locator('[data-project-group="engineering"] .project h3').allTextContents(), [
+      'E-commerce Backend Engine', 'M.O.U.N.I.R', 'RS4IT MCP Hub', 'Resume Analyst AI',
+      'Arabic Quran ASR', 'AutoContent AI', 'Advanced Neural Network Framework'
+    ]);
+    assert.equal(await page.locator('#filter-result').getAttribute('data-count-label'), locale === 'ar' ? '{count} مشاريع مختارة' : '{count} selected projects');
+    assert.equal(await page.locator('.motion-toggle').getAttribute('data-label-off'), locale === 'ar' ? 'الحركة متوقفة' : 'Motion off');
     const columns = async group => page.locator('[data-project-group="' + group + '"] .group-grid').evaluate(grid => getComputedStyle(grid).gridTemplateColumns.split(/\s+/).length);
     assert.equal(await columns('apps'), width <= 560 ? 1 : 2);
     assert.equal(await columns('engineering'), width <= 560 ? 1 : width <= 850 ? 2 : 3);
@@ -146,6 +152,26 @@ try {
     console.log('Passed: ' + locale + ' ' + width + 'px, projects, images, links, filters, themes and motion');
     await page.close();
   }
+  const bilingual = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await bilingual.goto(origin, { waitUntil: 'domcontentloaded' });
+  const readProjects = () => bilingual.locator('.project').evaluateAll(cards => cards.map(card => ({
+    name: card.querySelector('h3').textContent,
+    tags: card.dataset.tags,
+    links: [...card.querySelectorAll('a[href]')].map(link => link.href),
+    images: [...card.querySelectorAll('img')].map(img => img.src),
+  })));
+  const englishProjects = await readProjects();
+  await bilingual.locator('#theme-toggle').click();
+  await bilingual.locator('.language-toggle').click();
+  await bilingual.waitForURL(origin + '/ar/');
+  assert.equal(await bilingual.locator('html').getAttribute('lang'), 'ar');
+  assert.equal(await bilingual.locator('html').getAttribute('data-theme'), 'dark');
+  assert.deepEqual(await readProjects(), englishProjects, 'Both locales share project structure, order, links and images');
+  await bilingual.locator('.language-toggle').click();
+  await bilingual.waitForURL(origin + '/');
+  assert.equal(await bilingual.locator('html').getAttribute('lang'), 'en');
+  assert.equal(await bilingual.locator('html').getAttribute('data-theme'), 'dark');
+  await bilingual.close();
   const page = await browser.newPage({ reducedMotion: 'reduce' });
   await page.goto(origin, { waitUntil: 'domcontentloaded' });
   assert.equal(await page.locator('.signal-runner').evaluate(p => getComputedStyle(p).animationName), 'none');
