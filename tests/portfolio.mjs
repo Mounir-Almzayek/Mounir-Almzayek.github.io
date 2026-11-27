@@ -211,6 +211,32 @@ try {
   assert.equal(await bilingual.locator('html').getAttribute('lang'), 'en');
   assert.equal(await bilingual.locator('html').getAttribute('data-theme'), 'dark');
   await bilingual.close();
+  // Dedicated motion checks: visible typing, exact viewport-height trigger and fail-open.
+  for (const locale of ['en', 'ar']) {
+    const motion = await browser.newPage({ viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference' });
+    await motion.goto(origin + (locale === 'ar' ? '/ar/' : '/'), { waitUntil: 'domcontentloaded' });
+    const role = motion.locator('.hero-role');
+    await motion.waitForFunction(() => {
+      const overlay = document.querySelector('.hero-role [data-typing-overlay]');
+      return overlay && overlay.textContent.length > 0 && overlay.textContent.length < overlay.previousElementSibling.textContent.length;
+    });
+    await motion.waitForFunction(() => !document.querySelector('.hero-role [data-typing-overlay]'));
+    assert.ok((await role.innerText()).trim().length > 0);
+    const target = motion.locator('#certifications .credential-card').first();
+    const placeAt = fraction => target.evaluate((node, part) => {
+      window.scrollTo({ top: node.getBoundingClientRect().top + scrollY - innerHeight * part, behavior: 'instant' });
+    }, fraction);
+    await placeAt(.89);
+    await motion.waitForFunction(() => document.querySelector('#certifications .credential-card').hasAttribute('data-motion-pending'));
+    assert.equal(await target.evaluate(node => getComputedStyle(node).opacity), '0');
+    await placeAt(.72);
+    await motion.waitForFunction(() => {
+      const node = document.querySelector('#certifications .credential-card');
+      return !node.hasAttribute('data-motion-pending') && node.getAnimations().some(animation => animation.id === 'portfolio-motion-reveal');
+    });
+    await motion.waitForFunction(() => getComputedStyle(document.querySelector('#certifications .credential-card')).opacity === '1');
+    await motion.close();
+  }
   const page = await browser.newPage({ reducedMotion: 'reduce' });
   await page.goto(origin, { waitUntil: 'domcontentloaded' });
   assert.equal(await page.locator('.signal-runner').evaluate(p => getComputedStyle(p).animationName), 'none');
