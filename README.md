@@ -12,7 +12,7 @@ Run `python -m http.server 8000` from the repository root and open http://localh
 
 ## Projects and real previews
 
-The site presents 13 projects. Product images link to their public product websites or official store listings. Projects without a verified public demo link to source code where available. Architecture diagrams are conceptual, not screenshots. Tebyan and Liqaa have real browser screenshots committed under `assets/previews/`; capture results are recorded in `assets/previews/report.json`.
+The site presents 33 project cards across five collections, including a collapsible archive. Every card has a visual preview: an authentic product/store image or a clearly labeled conceptual engineering illustration. Public product and store links are distinguished from the user's specific contribution; private sources are not linked. Tebyan, Liqaa, Mazeed and Ovaluate have real browser screenshots; Saudi Cup, Bin Taleb and Swimmer use original Google Play images. Wusol has a conceptual fallback because its official website returned HTTP 530 during capture. Capture results are recorded in `assets/previews/report.json`.
 
 ## Original résumés
 
@@ -25,7 +25,7 @@ The homepage links directly to the original Drive files for viewing and download
 
 ## Verification and deployment
 
-GitHub Pages deploys from `main` / root. The **Capture portfolio previews and smoke test** workflow captures live previews using Playwright, verifies the layout at 1440px and 390px, checks filters, dark mode, original CV links and JavaScript errors, and commits the captured assets after successful tests. Its verification artifact contains the browser screenshots and capture report.
+GitHub Pages deploys from `main` / root. The **Capture portfolio previews and smoke test** workflow captures live previews using Playwright, verifies the layout at 1440px and 390px, checks the five collections, all 33 previews, filters, dark mode, original CV links and JavaScript errors, and commits the captured assets after successful tests. Its verification artifact contains the browser screenshots and capture report.
 
 A GitHub Actions bot commit may not itself trigger branch-based Pages deployment; verify a subsequent Pages run after refreshing preview assets. No private project source or live application data are embedded.
 
