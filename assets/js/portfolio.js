@@ -247,6 +247,7 @@ function initInteractiveDepth() {
   if (!window.requestAnimationFrame || !window.matchMedia) return;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   const precise = matchMedia('(hover: hover) and (pointer: fine)');
+  const compact = matchMedia('(max-width: 620px)');
   const stage = document.querySelector('.profile-stage');
   const hero = document.querySelector('.hero');
   const surfaces = new Map();
@@ -338,7 +339,7 @@ function initInteractiveDepth() {
       { node: portrait, draw: (x, y, t) => transform(x * -12, y * -10, 0, 0, 1 + t * .10) },
       ...badges.map((node, index) => ({
         node, draw: (x, y, t) => {
-          const depth = [18, 24, 30][index] || 20;
+          const depth = ([18, 24, 30][index] || 20) * (compact.matches ? .4 : 1);
           return transform(x * depth, y * depth * .65, -y * 3, x * 4, 1 + t * .018);
         }
       }))
