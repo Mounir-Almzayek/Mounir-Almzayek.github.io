@@ -7,11 +7,15 @@ const html = await readFile('index.html', 'utf8');
 for (const match of html.matchAll(/(?:src|href)="(assets\/[^"]+)"/g)) await access(match[1]);
 const browser = await chromium.launch();
 try {
-  for (const width of [390, 768, 1024, 1440]) {
+  for (const locale of ['en', 'ar']) for (const width of [390, 768, 1024, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 }, reducedMotion: 'no-preference' });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.goto(origin, { waitUntil: 'domcontentloaded' });
+    await page.goto(origin + (locale === 'ar' ? '/ar/' : '/'), { waitUntil: 'domcontentloaded' });
+    assert.equal(await page.locator('html').getAttribute('lang'), locale);
+    assert.equal(await page.locator('html').evaluate(node => getComputedStyle(node).direction), locale === 'ar' ? 'rtl' : 'ltr');
+    assert.equal(await page.locator('.language-toggle').getAttribute('href'), locale === 'ar' ? '/' : '/ar/');
+    assert.ok(await page.locator('.language-toggle').isVisible());
     const photo = page.locator('.profile-photo');
     await photo.evaluate(img => img.decode());
     const box = await photo.boundingBox();
@@ -30,7 +34,7 @@ try {
     assert.equal(await page.locator('[data-visitors-preview] a').getAttribute('href'), 'https://visitors-rs.com/');
     assert.ok(await page.locator('a[href*="com.rs4it.qomel.visitors"]').count());
     assert.equal(await page.locator('[data-project-group="apps"] .project h3').first().innerText(), 'Zaker');
-    for (const img of await page.locator('img[src^="assets/"]').all()) {
+    for (const img of await page.locator('img[src*="assets/"]').all()) {
       await img.evaluate(async image => { image.loading = 'eager'; await image.decode(); });
     }
     const duplicates = await page.evaluate(() => {
@@ -47,7 +51,7 @@ try {
     await page.locator('[data-filter="all"]').click();
     assert.equal(await page.locator('.project:not([hidden])').count(), 18);
     const signal = page.locator('.signal-runner');
-    const strip = page.locator('.specialty-grid');
+    const strip = page.locator('.specialty-float');
     assert.equal(await strip.locator('.specialty-item').count(), 3);
     assert.equal(await page.locator('.profile-orbit, .orbit-label, .portrait-halo').count(), 0);
     assert.equal(await signal.evaluate(node => getComputedStyle(node).animationName), 'engineering-signal');
@@ -68,16 +72,20 @@ try {
     await page.waitForTimeout(400);
     const photoAfter = await documentBounds();
     assert.ok(photoAfter.every((value, i) => Math.abs(value - photoBefore[i]) < 1), 'Portrait remains fixed in document coordinates');
-    const itemBounds = await strip.locator('.specialty-item').evaluateAll(nodes => nodes.map(node => ({x:node.offsetLeft, y:node.offsetTop, width:node.offsetWidth, height:node.offsetHeight, overflow:node.scrollWidth>node.clientWidth+1})));
-    assert.ok(itemBounds.every(node => !node.overflow && node.y === itemBounds[0].y && Math.abs(node.width-itemBounds[0].width)<=1));
+    const bounds = await strip.locator('.specialty-item').evaluateAll(nodes => nodes.map(node => {const r=node.getBoundingClientRect(); return {x:r.x,y:r.y,right:r.right,bottom:r.bottom};}));
+    const portrait = await photo.boundingBox();
+    assert.ok(bounds[0].right <= bounds[1].x && Math.abs(bounds[0].y-bounds[1].y)<1, 'Top specialty cards aligned without overlap');
+    assert.ok(bounds.every(card => card.bottom <= portrait.y || card.y >= portrait.y+portrait.height), 'Cards must stay outside the portrait');
+    assert.match(await page.locator('#filter-result').innerText(), locale === 'ar' ? /مشاريع/ : /selected projects/);
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2));
     await page.evaluate(() => scrollTo(0, 0));
-    await page.screenshot({ path: '/tmp/portfolio-' + width + '-light.png', animations: 'disabled' });
+    await page.screenshot({ path: '/tmp/portfolio-' + locale + '-' + width + '-light.png', animations: 'disabled' });
     await page.locator('#theme-toggle').click();
     assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
-    await page.screenshot({ path: '/tmp/portfolio-' + width + '-dark.png', animations: 'disabled' });
+    assert.equal(await page.locator('#theme-toggle').innerText(), locale === 'ar' ? 'الوضع الفاتح' : 'Light mode');
+    await page.screenshot({ path: '/tmp/portfolio-' + locale + '-' + width + '-dark.png', animations: 'disabled' });
     assert.deepEqual(errors, []);
-    console.log('Passed: ' + width + 'px, projects, images, links, filters, themes and motion');
+    console.log('Passed: ' + locale + ' ' + width + 'px, projects, images, links, filters, themes and motion');
     await page.close();
   }
   const page = await browser.newPage({ reducedMotion: 'reduce' });
