@@ -182,6 +182,7 @@ try {
     await page.evaluate(() => scrollTo(0, 0));
     await page.screenshot({ path: '/tmp/portfolio-' + locale + '-' + width + '-light.png', animations: 'disabled' });
     await page.locator('#theme-toggle').click();
+    await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark' && !document.documentElement.dataset.themeTransition);
     assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
     assert.equal(await page.locator('#theme-toggle').getAttribute('aria-label'), locale === 'ar' ? 'الوضع الفاتح' : 'Light mode');
     assert.ok(await theme.locator('.theme-sun').isVisible());
@@ -201,6 +202,7 @@ try {
   })));
   const englishProjects = await readProjects();
   await bilingual.locator('#theme-toggle').click();
+  await bilingual.waitForFunction(() => document.documentElement.dataset.theme === 'dark' && !document.documentElement.dataset.themeTransition);
   await bilingual.locator('.language-toggle').click();
   await bilingual.waitForURL(origin + '/ar/');
   assert.equal(await bilingual.locator('html').getAttribute('lang'), 'ar');
@@ -244,10 +246,42 @@ try {
     await motion.waitForFunction(() => document.querySelector('.hero-ambient')?.dataset.ambientState === 'paused');
     await motion.close();
   }
+  // Real snapshot transitions: verify both radial directions and exact button origin.
+  for (const locale of ['en', 'ar']) {
+    const wipe = await browser.newPage({ viewport: { width: 1280, height: 800 }, reducedMotion: 'no-preference' });
+    await wipe.goto(origin + (locale === 'ar' ? '/ar/' : '/'), { waitUntil: 'domcontentloaded' });
+    const toggle = wipe.locator('#theme-toggle');
+    const supported = await wipe.evaluate(() => typeof document.startViewTransition === 'function');
+    const geometry = await toggle.boundingBox();
+    if (supported) {
+      for (const [direction, theme] of [['expand','dark'], ['contract','light']]) {
+        await toggle.click();
+        await wipe.waitForFunction(expected => document.documentElement.dataset.themeTransition === expected, direction);
+        const values = await wipe.evaluate(dir => {
+          const root = document.documentElement;
+          const pseudo = getComputedStyle(root, dir === 'expand' ? '::view-transition-new(root)' : '::view-transition-old(root)');
+          return [parseFloat(root.style.getPropertyValue('--theme-wipe-x')), parseFloat(root.style.getPropertyValue('--theme-wipe-y')), parseFloat(root.style.getPropertyValue('--theme-wipe-radius')), pseudo.animationName];
+        }, direction);
+        assert.ok(Math.abs(values[0] - (geometry.x + geometry.width / 2)) < 2);
+        assert.ok(Math.abs(values[1] - (geometry.y + geometry.height / 2)) < 2);
+        assert.ok(values[2] >= Math.hypot(Math.max(values[0], 1280 - values[0]), Math.max(values[1], 800 - values[1])));
+        await wipe.waitForFunction(dir => {
+          const root = document.documentElement;
+          const pseudo = getComputedStyle(root, dir === 'expand' ? '::view-transition-new(root)' : '::view-transition-old(root)');
+          return pseudo.animationName === 'theme-circle-' + dir;
+        }, direction);
+        await wipe.waitForFunction(expected => document.documentElement.dataset.theme === expected && !document.documentElement.dataset.themeTransition, theme);
+      }
+    }
+    await wipe.close();
+  }
   const page = await browser.newPage({ reducedMotion: 'reduce' });
   await page.goto(origin, { waitUntil: 'domcontentloaded' });
   assert.equal(await page.locator('.signal-runner').evaluate(p => getComputedStyle(p).animationName), 'none');
   assert.equal(await page.locator('.motion-toggle').isVisible(), false);
+  await page.locator('#theme-toggle').click();
+  assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
+  assert.equal(await page.locator('html').getAttribute('data-theme-transition'), null);
   await page.waitForFunction(() => document.querySelector('.hero-ambient')?.dataset.ambientState === 'paused');
   await page.locator('.profile-photo').hover();
   assert.equal(await page.locator('.profile-photo').evaluate(node => node.style.transform), '', 'Reduced motion disables pointer depth');
