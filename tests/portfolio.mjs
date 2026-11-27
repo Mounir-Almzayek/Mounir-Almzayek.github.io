@@ -283,6 +283,20 @@ try {
     }
     await wipe.close();
   }
+  // Editorial underlines: preserve typing, highlight actual evidence in both locales.
+  for (const locale of ['en','ar']) {
+    const accents = await browser.newPage({ viewport: { width: 1280, height: 900 }, reducedMotion: 'no-preference' });
+    await accents.goto(origin + (locale === 'ar' ? '/ar/' : '/'), { waitUntil:'domcontentloaded' });
+    await accents.waitForFunction(() => !!document.querySelector('.hero-role .recruiter-accent'));
+    assert.equal(await accents.locator('.hero-role').getAttribute('data-motion-typing'), null);
+    assert.equal(await accents.locator('.hero-role .recruiter-accent').innerText(), locale === 'ar' ? 'مهندس ذكاء اصطناعي وبرمجيات' : 'AI & Software Engineer');
+    const job = accents.locator('[data-role="rs4it-flutter"]');
+    await job.scrollIntoViewIfNeeded();
+    await accents.waitForFunction(() => !!document.querySelector('[data-role="rs4it-flutter"] .recruiter-accent'));
+    assert.match(await job.locator('.recruiter-accent').first().innerText(), /6/);
+    assert.equal(await accents.locator('[data-role="misbar"] .recruiter-accent').count(), 0);
+    await accents.close();
+  }
   const page = await browser.newPage({ reducedMotion: 'reduce' });
   await page.goto(origin, { waitUntil: 'domcontentloaded' });
   assert.equal(await page.locator('.signal-runner').evaluate(p => getComputedStyle(p).animationName), 'none');
