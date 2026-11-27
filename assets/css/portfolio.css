@@ -459,3 +459,10 @@ html[lang=ar] .specialty-item strong,html[lang=ar] .specialty-item small { lette
 .credential-card .credential-meta { margin-top:3px }
 .credential-art-top .brand-mark { width:78px;flex-basis:78px;height:38px }
 @media(max-width:900px) { .nav-ready .nav-primary { max-height:calc(100dvh - 76px);overflow:auto } }
+
+
+/* Ambient hero field: no grid items, hit testing, or layout changes. */
+.hero { position:relative;isolation:isolate }
+.hero-ambient { position:absolute;inset:0;width:100%;height:100%;display:block;z-index:-1;pointer-events:none;user-select:none }
+@media(prefers-reduced-motion:reduce) { .hero-ambient { opacity:.55 } }
+@media print { .hero-ambient { display:none!important } }
