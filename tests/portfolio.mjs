@@ -58,10 +58,16 @@ try {
     assert.equal(await signal.evaluate(node => getComputedStyle(node).animationPlayState), 'paused');
     await page.locator('.motion-toggle').click();
     assert.equal(await signal.evaluate(node => getComputedStyle(node).animationPlayState), 'running');
-    const photoBefore = await photo.boundingBox();
+    await photo.scrollIntoViewIfNeeded();
+    const documentBounds = () => photo.evaluate(node => {
+      const b = node.getBoundingClientRect();
+      return [b.x + scrollX, b.y + scrollY, b.width, b.height];
+    });
+    const photoBefore = await documentBounds();
     await photo.hover();
     await page.waitForTimeout(400);
-    assert.deepEqual(await photo.boundingBox(), photoBefore, 'Portrait remains fixed');
+    const photoAfter = await documentBounds();
+    assert.ok(photoAfter.every((value, i) => Math.abs(value - photoBefore[i]) < 1), 'Portrait remains fixed in document coordinates');
     const itemBounds = await strip.locator('.specialty-item').evaluateAll(nodes => nodes.map(node => ({x:node.offsetLeft, y:node.offsetTop, width:node.offsetWidth, height:node.offsetHeight, overflow:node.scrollWidth>node.clientWidth+1})));
     assert.ok(itemBounds.every(node => !node.overflow && node.y === itemBounds[0].y && Math.abs(node.width-itemBounds[0].width)<=1));
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2));
