@@ -1,5 +1,7 @@
 'use strict';
 
+const isArabic = document.documentElement.lang === 'ar';
+
 function initProjectFilters() {
   const buttons = [...document.querySelectorAll('[data-filter]')];
   const cards = [...document.querySelectorAll('.project[data-tags]')];
@@ -13,7 +15,7 @@ function initProjectFilters() {
     });
     groups.forEach(group => { group.hidden = !group.querySelector('.project:not([hidden])'); });
     buttons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.filter === category)));
-    if (result) result.textContent = count + ' selected projects';
+    if (result) result.textContent = isArabic ? count + ' مشاريع مختارة' : count + ' selected projects';
   }
   buttons.forEach(button => button.addEventListener('click', () => filter(button.dataset.filter)));
   filter('all');
@@ -33,7 +35,7 @@ function initTheme() {
   function setTheme(dark) {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
     button.setAttribute('aria-pressed', String(dark));
-    button.textContent = dark ? 'Light mode' : 'Dark mode';
+    button.textContent = isArabic ? (dark ? 'الوضع الفاتح' : 'الوضع الداكن') : (dark ? 'Light mode' : 'Dark mode');
     try { localStorage.setItem('portfolio-theme', dark ? 'dark' : 'light'); } catch {}
   }
   let saved;
@@ -52,7 +54,7 @@ function initPortraitMotion() {
     const active = enabled && !reduced.matches;
     stage.dataset.motion = active ? 'running' : 'paused';
     toggle.setAttribute('aria-pressed', String(active));
-    toggle.querySelector('span').textContent = active ? 'Motion on' : 'Motion off';
+    toggle.querySelector('span').textContent = isArabic ? (active ? 'الحركة مفعّلة' : 'الحركة متوقفة') : (active ? 'Motion on' : 'Motion off');
   }
   update();
   toggle.addEventListener('click', () => { enabled = !enabled; update(); });
