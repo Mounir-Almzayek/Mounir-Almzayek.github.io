@@ -16,6 +16,18 @@ try {
     assert.equal(await page.locator('html').evaluate(node => getComputedStyle(node).direction), locale === 'ar' ? 'rtl' : 'ltr');
     assert.equal(await page.locator('.language-toggle').getAttribute('href'), locale === 'ar' ? '/' : '/ar/');
     assert.ok(await page.locator('.language-toggle').isVisible());
+    if (locale === 'ar') {
+      await page.evaluate(() => document.fonts.ready);
+      assert.match(await page.locator('.hero h1').evaluate(node => getComputedStyle(node).fontFamily), /IBM Plex Sans Arabic/);
+      assert.match(await page.locator('.projectbody p').first().evaluate(node => getComputedStyle(node).fontFamily), /IBM Plex Sans Arabic/);
+      const faces = await page.evaluate(async () => {
+        const loaded = await Promise.all([400,600,700].map(weight => document.fonts.load(weight+' 20px "IBM Plex Sans Arabic"', 'منير المزيك')));
+        return loaded.map(items => items.some(face => face.status === 'loaded' && face.family.includes('IBM Plex Sans Arabic')));
+      });
+      assert.deepEqual(faces, [true,true,true], 'Local Arabic font faces loaded');
+    } else {
+      assert.equal(await page.locator('link[href*="arabic-fonts.css"]').count(), 0);
+    }
     const photo = page.locator('.profile-photo');
     await photo.evaluate(img => img.decode());
     const box = await photo.boundingBox();
@@ -53,6 +65,10 @@ try {
     const signal = page.locator('.signal-runner');
     const strip = page.locator('.specialty-float');
     assert.equal(await strip.locator('.specialty-item').count(), 3);
+    assert.ok(await strip.locator('.specialty-item').evaluateAll(items => items.every(item => {
+      const style = getComputedStyle(item);
+      return style.position === 'absolute' && parseFloat(style.borderRadius) >= 5 && parseFloat(style.borderTopWidth) >= 1 && item.scrollWidth <= item.clientWidth + 1;
+    })), 'Three distinct, rounded specialty cards');
     assert.equal(await page.locator('.profile-orbit, .orbit-label, .portrait-halo').count(), 0);
     assert.equal(await signal.evaluate(node => getComputedStyle(node).animationName), 'engineering-signal');
     const initial = await signal.evaluate(node => getComputedStyle(node).transform);
