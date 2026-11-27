@@ -1,0 +1,33 @@
+{
+  "source": "https://avatars.githubusercontent.com/u/171086291?v=4",
+  "width": 460,
+  "height": 460,
+  "bytes": 278603,
+  "file": "assets/profile/portrait.png",
+  "candidates": [
+    {
+      "url": "https://avatars.githubusercontent.com/u/171086291?v=4",
+      "width": 460,
+      "height": 460,
+      "bytes": 278603
+    },
+    {
+      "url": "https://avatars.githubusercontent.com/u/171086291?v=4&s=460",
+      "width": 460,
+      "height": 460,
+      "bytes": 278603
+    },
+    {
+      "url": "https://avatars.githubusercontent.com/u/171086291?v=4&s=1024",
+      "width": 460,
+      "height": 460,
+      "bytes": 278603
+    },
+    {
+      "url": "https://avatars.githubusercontent.com/u/171086291?v=4&s=2048",
+      "width": 460,
+      "height": 460,
+      "bytes": 278603
+    }
+  ]
+}
