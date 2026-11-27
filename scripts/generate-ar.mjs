@@ -10,6 +10,7 @@ html=html.replace('rel="canonical" href="https://mounir-almzayek.github.io/"','r
 html=html.replace('property="og:title" content="Mounir Almzayek — Engineering for the real world"','property="og:title" content="منير المزيك — معرض الأعمال الهندسية"').replace('property="og:description" content="AI systems, mobile products and backend engineering."','property="og:description" content="الذكاء الاصطناعي وتطبيقات الجوال وهندسة Backend."');
 html=html.replace('name="twitter:title" content="Mounir Almzayek — Engineering Portfolio"','name="twitter:title" content="منير المزيك — معرض الأعمال الهندسية"').replace('name="twitter:description" content="AI systems, mobile products and backend engineering."','name="twitter:description" content="الذكاء الاصطناعي وتطبيقات الجوال وهندسة Backend."');
 html=html.replace(/(src|href)="assets\//g,'$1="/assets/');
+html=html.replace('<link rel="stylesheet" href="/assets/css/portfolio.css">','<link rel="stylesheet" href="/assets/css/arabic-fonts.css">\n<link rel="stylesheet" href="/assets/css/portfolio.css">');
 html=html.replace(/<body>[\s\S]*?<\/body>/,body=>body.replace(/<svg\b[\s\S]*?<\/svg>|<script\b[\s\S]*?<\/script>|>([^<>]+)</g,(match,node)=>{
   if(node===undefined)return match;
   const key=node.trim();
