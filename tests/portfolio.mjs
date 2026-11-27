@@ -9,6 +9,8 @@ const browser = await chromium.launch();
 try {
   for (const locale of ['en', 'ar']) for (const width of [390, 768, 1024, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 }, reducedMotion: 'no-preference' });
+    page.setDefaultTimeout(15000);
+    console.log('Checking ' + locale + ' / ' + width);
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(origin + (locale === 'ar' ? '/ar/' : '/'), { waitUntil: 'domcontentloaded' });
@@ -82,7 +84,7 @@ try {
     assert.equal(await navPrimary.locator('a[href="#volunteering"]').count(), 1);
     assert.ok(await page.locator('.credential-original').count() >= 6);
     for (const img of await page.locator('.credential-original').all()) {
-      const size = await img.evaluate(async node => { await node.decode(); return node.naturalWidth / node.naturalHeight; });
+      const size = await img.evaluate(async node => { node.loading = 'eager'; await node.decode(); return node.naturalWidth / node.naturalHeight; });
       assert.ok(size > 1.15 && size < 1.5, 'Certificate preview is cropped to the paper, not the surrounding webpage');
     }
     assert.equal(await page.locator('.credential-actions').count(), 8);
