@@ -9,6 +9,8 @@ const browser = await chromium.launch();
 try {
   for (const locale of ['en', 'ar']) for (const width of [390, 768, 1024, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 }, reducedMotion: 'no-preference' });
+    page.setDefaultTimeout(15000);
+    console.log('Checking ' + locale + ' / ' + width);
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(origin + (locale === 'ar' ? '/ar/' : '/'), { waitUntil: 'domcontentloaded' });
@@ -30,13 +32,13 @@ try {
     assert.equal(await theme.locator('.theme-sun').isVisible(), false);
     assert.ok((await nav.boundingBox()).height <= 64, 'Compact header');
     assert.equal(await navPrimary.locator('a.pill').count(), 1);
-    if (width <= 700) {
+    if (width <= 900) {
       assert.ok(await menu.isVisible());
       assert.equal(await navPrimary.isVisible(), false);
       await menu.click();
       assert.equal(await menu.getAttribute('aria-expanded'), 'true');
       assert.ok(await navPrimary.isVisible());
-      assert.equal(await navPrimary.locator('a:visible').count(), 4);
+      assert.equal(await navPrimary.locator('a:visible').count(), 6);
       await page.keyboard.press('Escape');
       assert.equal(await menu.getAttribute('aria-expanded'), 'false');
       assert.equal(await navPrimary.isVisible(), false);
@@ -46,7 +48,7 @@ try {
       await page.evaluate(() => scrollTo(0,0));
     } else {
       assert.equal(await menu.isVisible(), false);
-      assert.equal(await navPrimary.locator('a:visible').count(), 4);
+      assert.equal(await navPrimary.locator('a:visible').count(), 6);
       const boxes = await navPrimary.locator('a').evaluateAll(links => links.map(link => link.getBoundingClientRect().toJSON()).sort((a,b) => a.x-b.x));
       assert.ok(boxes.slice(1).every((box,i) => box.x - boxes[i].right >= 12), 'Desktop links have visual separation');
     }
@@ -77,6 +79,20 @@ try {
     assert.equal(await photo.evaluate(img => getComputedStyle(img).filter), 'none');
     assert.equal(await page.locator('#experience [data-role]').count(), 6);
     assert.equal(await page.locator('#certifications [data-cert]').count(), 8);
+    assert.equal(await page.locator('.credential-visual').count(), 8);
+    assert.equal(await navPrimary.locator('a[href="#certifications"]').count(), 1);
+    assert.equal(await navPrimary.locator('a[href="#volunteering"]').count(), 1);
+    assert.ok(await page.locator('.credential-original').count() >= 6);
+    for (const img of await page.locator('.credential-original').all()) {
+      const size = await img.evaluate(async node => { node.loading = 'eager'; await node.decode(); return node.naturalWidth / node.naturalHeight; });
+      assert.ok(size > 1.15 && size < 1.5, 'Certificate preview is cropped to the paper, not the surrounding webpage');
+    }
+    assert.equal(await page.locator('.credential-actions').count(), 8);
+    assert.equal(await page.locator('#experience .brand-mark').count(), 6);
+    assert.equal(await page.locator('#volunteering .brand-mark').count(), 4);
+    for (const img of await page.locator('.brand-mark img, .credential-original').all()) {
+      await img.evaluate(async node => { node.loading='eager'; await node.decode(); });
+    }
     assert.equal(await page.locator('#volunteering [data-volunteer]').count(), 4);
     assert.equal(await page.locator('.credential-code').count(), 7);
     assert.equal(await page.locator('.app-shot .store-gallery img[src*="/cropped/"]').count(), 15);

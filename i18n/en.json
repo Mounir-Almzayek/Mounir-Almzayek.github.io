@@ -260,5 +260,12 @@
   "work.professional.professional-field-systems": "Professional & field systems",
   "work.professional.work-03": "WORK / 03",
   "work.published-apps": "Published apps",
-  "work.selected-work": "Selected work."
+  "work.selected-work": "Selected work.",
+  "media.credential-preview": "Credential overview · not the original certificate",
+  "media.credential-issuer": "Issuer website ↗",
+  "media.credential-profile": "View LinkedIn credentials ↗",
+  "media.credential-original": "Original credential · issuer public page",
+  "media.credential-verify": "View credential ↗",
+  "navigation.certifications": "Certificates",
+  "navigation.volunteering": "Volunteering"
 }
