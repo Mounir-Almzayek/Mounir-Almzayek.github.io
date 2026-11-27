@@ -12,5 +12,61 @@
     "url": "https://www.byliqaa.me/ar",
     "status": "captured",
     "path": "assets/previews/liqaa.jpg"
+  },
+  {
+    "project": "Mazeed",
+    "title": "مزيد - برنامج المحاسبة المتكامل للشركات والمتاجر السعودية",
+    "url": "https://mazeed.arambs.com/",
+    "status": "captured",
+    "path": "assets/previews/mazeed.jpg"
+  },
+  {
+    "project": "The Saudi Cup",
+    "url": "https://play.google.com/store/apps/details?id=com.app.saudicup",
+    "status": "captured",
+    "screenshots": [
+      {
+        "path": "assets/previews/saudi-cup-1.jpg",
+        "source": "https://play-lh.googleusercontent.com/3_6rxnBY0H_NyXFnuY1FdkrRoJmTb_oW6FIc3fIqoN7wCBexJJ1a-G6CG4L5GQh8A9p10PH1BCI90oHt80SKnSI=w720-h1280"
+      },
+      {
+        "path": "assets/previews/saudi-cup-2.jpg",
+        "source": "https://play-lh.googleusercontent.com/KyBBtehsq9ZrRWmNwJtfKp6W2Jc9POWHG_mdxrNo4GjJqGDXUCPDePWNMvFjeZMRXUkpNmHxiJk5JE96k8P1Lw=w720-h1280"
+      },
+      {
+        "path": "assets/previews/saudi-cup-3.jpg",
+        "source": "https://play-lh.googleusercontent.com/2b4G9koe9GnF8RUkr_hCznwndGVlohxUNrIY08LD5nzxyYsG65bODQvnl7cK-KM76qIamE3ocmm9YexW1nEqzBg=w720-h1280"
+      }
+    ]
+  },
+  {
+    "project": "Bin Taleb",
+    "url": "https://play.google.com/store/apps/details?id=com.rs4it.bin_taleb",
+    "status": "captured",
+    "screenshots": [
+      {
+        "path": "assets/previews/bin-taleb-1.jpg",
+        "source": "https://play-lh.googleusercontent.com/4vJnJhOpb_0xzukaMawh8ow-sNG9SPExPqukLYn4U6BB99YEVnwF39jUTOvX0oSRPw4tTPSwJ1Zii6jFts6r-A=w720-h1280"
+      }
+    ]
+  },
+  {
+    "project": "The Swimmer",
+    "url": "https://play.google.com/store/apps/details?id=com.rs4it.swimmer",
+    "status": "captured",
+    "screenshots": [
+      {
+        "path": "assets/previews/swimmer-1.png",
+        "source": "https://play-lh.googleusercontent.com/Qbf-ka13hO_2a0bAft1vTVGIL8EZVAu5-yFJenW1-8OTBWyGWaAlws2QSMEJSW1x6EQj1tJCFtnE9lfLhItZBg=w720-h1280"
+      },
+      {
+        "path": "assets/previews/swimmer-2.png",
+        "source": "https://play-lh.googleusercontent.com/0NnXO2LJVfsj_8up_PIunYftgkS-Nc3ZQHrs2X55NNHdvCwY0ExP3E8R-BgwZCm1tIlmTTcCmyv4Y7rx9bwtmw=w720-h1280"
+      },
+      {
+        "path": "assets/previews/swimmer-3.png",
+        "source": "https://play-lh.googleusercontent.com/ggLQvq05cDgvclL2HVkT0sTn9zH_c3WJTJWZGELL3r0KU1yIVVw9CwzqsUjCJpAvfG4vNKJgu6QYTuYGeYwwlQ=w720-h1280"
+      }
+    ]
   }
 ]
