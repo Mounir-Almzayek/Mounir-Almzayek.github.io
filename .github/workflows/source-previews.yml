@@ -33,7 +33,7 @@ jobs:
           const replacements=new Map();
           const official={
             'Rai — National Center for Public Opinion Polls':{url:'https://ncpop.org.sa/',file:'rai-official',label:'Official client organization website · not the survey app'},
-            'Visitors Management':{url:'https://visitors-rs.com/',file:'visitors-official',label:'Official Visitors product website'}
+            'Visitors Management':{url:'https://visitors-rs.com/',alternatives:['https://visitors-rs.com/companies/','https://www.rs4it.sa/service/نظام-إدارة-الزوار-للمنشآت/'],file:'visitors-official',label:'Official Visitors product website'}
           };
           const custom={
             'Wusol':['https://wusol.me/ar','https://wusol.me/en','https://app.wusol.me/ar/auth/login?next=%2Far%2Fhome'],
@@ -65,9 +65,10 @@ jobs:
               report.push({name,status:files.length?'captured':'remote originals',files});return;
             }
             const target=official[name];
+            if(target?.file==='rai-official'&&card.includes('assets/previews/sources/rai-official.jpg')){report.push({name,status:'existing genuine image',kind:target.label,url:target.url,path:'assets/previews/sources/rai-official.jpg'});return;}
             if(!target && /<img\b/.test(card)){report.push({name,status:'existing genuine image'});return;}
             const repo=card.match(/href="(https:\/\/github\.com\/Mounir-Almzayek\/[^"]+)"/)?.[1];
-            const candidates=target?[target.url]:[...(custom[name]||[]),...(repo?[repo]:[])];
+            const candidates=target?[target.url,...(target.alternatives||[])]:[...(custom[name]||[]),...(repo?[repo]:[])];
             const designTitles={'Clinic Hub':'clinic app','Sold Out / Order Application':'order app','Connect Four':'connect four'};
             if(designTitles[name]){
               const profile=await browser.newPage();
@@ -84,11 +85,13 @@ jobs:
             try{
               for(const url of candidates){
                 try{
+                  await page.goto('about:blank').catch(()=>{});
                   const res=await page.goto(url,{waitUntil:'domcontentloaded',timeout:25000});
                   if(!res?.ok())throw Error('HTTP '+res?.status());
                   await page.waitForLoadState('networkidle',{timeout:3500}).catch(()=>{});
                   const isAsset=new URL(url).hostname==='raw.githubusercontent.com';
                   const title=await page.title();
+                  if(target?.file==='visitors-official')await page.waitForFunction(()=>document.body.innerText.trim().length>100,{},{timeout:8000}).catch(()=>{});
                   const body=await page.locator('body').innerText();
                   if(!isAsset&&(body.trim().length<70||/access denied|just a moment|verify you are human|page not found|bad gateway|sign in to github/i.test(title+' '+body.slice(0,180))))throw Error('Unusable page');
                   const path='assets/previews/sources/'+(target?target.file:'source-'+name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''))+'.jpg';
@@ -102,7 +105,7 @@ jobs:
                   }else{
                     await page.screenshot({path,type:'jpeg',quality:84,animations:'disabled'});
                   }
-                  const label=target?target.label:isAsset?'Original public repository asset':repoPage?'Public source repository · not an app screenshot':url.includes('play.google.com')?'Official Google Play listing':url.includes('behance.net')?'Original published design project · Behance':'Official website · captured preview';
+                  const label=target?(new URL(url).hostname==='www.rs4it.sa'?'Official RS4IT product description':target.label):isAsset?'Original public repository asset':repoPage?'Public source repository · not an app screenshot':url.includes('play.google.com')?'Official Google Play listing':url.includes('behance.net')?'Original published design project · Behance':'Official website · captured preview';
                   const dest=isAsset?(repo||url):url;
                   const fig='<figure class="source-preview"><a href="'+esc(dest)+'"><img src="'+path+'" alt="'+esc(name)+' — '+esc(label)+'" loading="lazy" decoding="async"></a><span class="media-fallback">Open original source ↗</span><figcaption>'+esc(label)+'</figcaption></figure>';
                   const original=card.match(/<figure\b[^>]*>[\s\S]*?<\/figure>/)?.[0];
