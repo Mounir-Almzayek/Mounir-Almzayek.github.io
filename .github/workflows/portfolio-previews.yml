@@ -31,7 +31,9 @@ jobs:
           const targets = [
             {name:'tebyan',url:'https://tebyan-website.tebyan-sy-official.workers.dev/ar',original:'https://tebyan-website.tebyan-sy-official.workers.dev/experience/09-mosque-prayer-display.avif',label:'Tebyan'},
             {name:'liqaa',url:'https://www.byliqaa.me/ar',original:'https://www.byliqaa.me/images/landing/steps-invitation-arch.png',label:'Liqaa'},
-            {name:'mazeed',url:'https://mazeed.arambs.com/',label:'Mazeed'}
+            {name:'mazeed',url:'https://mazeed.arambs.com/',label:'Mazeed'},
+            {name:'wusol',url:'https://wusol.me/en',label:'Wusol'},
+            {name:'ovaluate',url:'https://www.ovaluate.com/',label:'Ovaluate'}
           ];
           let html=fs.readFileSync('index.html','utf8');
           const report=[];
@@ -50,6 +52,14 @@ jobs:
               const old='src="'+target.original+'"';
               if(target.original && html.includes(old)) html=html.replace(old,'src="'+path+'"');
               if(target.name==='mazeed') html=html.replace(/<div class="site-placeholder">MAZEED <span>Product website ↗<\/span><\/div>/,'<img src="'+path+'" alt="Live Mazeed product website" loading="lazy" decoding="async">');
+              if(['wusol','ovaluate'].includes(target.name)){
+                const marker='<div class="site-placeholder" data-capture="'+target.name+'">';
+                const start=html.indexOf(marker);
+                if(start>=0){
+                  const end=html.indexOf('</div>',start)+6;
+                  html=html.slice(0,start)+'<img src="'+path+'" alt="Screenshot of the official '+target.label+' product website" loading="lazy" decoding="async">'+html.slice(end);
+                }
+              }
               report.push({project:target.label,title,url:page.url(),status:'captured',path});
             }catch(error){report.push({project:target.label,status:'failed',error:String(error)});}
             finally{await page.close();}
@@ -122,11 +132,15 @@ jobs:
             if(await page.locator('.project:not([hidden])').count()!==3)throw Error('Published app filter failed');
             if(await page.locator('.project-group:not([hidden])').count()!==1)throw Error('Empty groups not hidden');
             await page.locator('[data-filter="all"]').click();
-            if(await page.locator('.project-group:not([hidden])').count()!==4)throw Error('Expected four project groups');
+            if(await page.locator('.project-group:not([hidden])').count()!==5)throw Error('Expected five project groups');
             if(await page.locator('.app-card .project-links a').count()!==6)throw Error('Missing official mobile app links');
             const missingLocal=await page.locator('img[src^="assets/previews/"]').evaluateAll(async imgs=>{await Promise.all(imgs.map(i=>{i.loading='eager';return i.decode().catch(()=>{})}));return imgs.filter(i=>!i.naturalWidth).map(i=>i.src)});
             if(missingLocal.length)throw Error('Missing local preview '+missingLocal.join(', '));
-            if(await page.locator('.project:not([hidden])').count()!==13)throw Error('Expected 13 project cards');
+            if(await page.locator('.project:not([hidden])').count()!==33)throw Error('Expected 33 project cards');
+            if(await page.locator('.project').count()!==await page.locator('.project figure').count())throw Error('Every card must have a preview');
+            if(await page.locator('.project .architecture-preview svg, .project .product-shot img, .project .site-placeholder svg').count()<33)throw Error('Missing project visualization');
+            if(await page.locator('.archive-details').getAttribute('open')===null)await page.locator('.archive-details summary').click();
+            if(await page.locator('.archive-details').getAttribute('open')===null)throw Error('Archive failed');
             if(await page.locator('#resumes a[href*="drive.google.com/file/d/"]').count()!==4)throw Error('Missing original CV links');
             if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2))throw Error('Horizontal overflow at '+width);
             if(errors.length)throw Error(errors.join('; '));
