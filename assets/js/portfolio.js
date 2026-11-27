@@ -582,202 +582,196 @@ function initInteractiveDepth() {
 initInteractiveDepth();
 
 
-// Decorative ambient engineering field, isolated behind the landing hero.
-function initHeroAmbient() {
-  const hero = document.querySelector('.hero');
-  if (!hero || !window.requestAnimationFrame || !window.IntersectionObserver ||
-      !window.ResizeObserver) return;
+// One living lattice replaces the static CSS grid across the whole page.
+// Coordinates follow the document; only the visible viewport is rasterized.
+function initPageGrid() {
+  if (!window.requestAnimationFrame || !window.matchMedia) return;
   const canvas = document.createElement('canvas');
-  canvas.className = 'hero-ambient';
+  canvas.className = 'page-grid';
   canvas.setAttribute('aria-hidden', 'true');
   canvas.setAttribute('role', 'presentation');
   const ctx = canvas.getContext('2d', { alpha: true });
   if (!ctx) return;
-  hero.prepend(canvas);
+  const root = document.documentElement;
+  const body = document.body;
+  const stage = document.querySelector('.profile-stage');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   const precise = matchMedia('(hover: hover) and (pointer: fine)');
-  const stage = hero.querySelector('.profile-stage');
-  const root = document.documentElement;
-  let width = 0, height = 0, ratio = 1, frame = 0, last = 0, elapsed = 0;
-  let visible = false, printing = false, dark = root.dataset.theme === 'dark';
-  let pointerX = .5, pointerY = .5, targetX = .5, targetY = .5;
-  let pointerStrength = 0, targetStrength = 0;
-  const nodes = [];
-  const links = [];
-  // Fixed seed keeps the composition stable across resize and both languages.
-  let seed = 8197;
-  const random = () => {
-    seed = (seed * 1664525 + 1013904223) >>> 0;
-    return seed / 4294967296;
-  };
-  for (let i = 0; i < 32; i++) {
-    nodes.push({
-      x: .055 + (i % 8) * .127 + (random() - .5) * .046, y: .12 + Math.floor(i / 8) * .25 + (random() - .5) * .10,
-      phase: random() * Math.PI * 2, speed: .14 + random() * .16,
-      depth: .45 + random() * .8, radius: 1.0 + random() * 1.15
-    });
-  }
-  for (let i = 0; i < nodes.length; i++) {
-    const nearest = nodes.map((n, j) => ({
-      j, d: Math.hypot(n.x - nodes[i].x, (n.y - nodes[i].y) * .65)
-    })).filter(n => n.j !== i && n.d < .21).sort((a, b) => a.d - b.d).slice(0, 2);
-    for (const n of nearest) {
-      if (!links.some(link => (link.a === i && link.b === n.j) || (link.a === n.j && link.b === i))) {
-        links.push({ a: i, b: n.j, phase: random(), pulse: random() < .52, bend: random() > .24 });
-      }
-    }
-  }
-  const canRun = () => visible && !printing && !document.hidden && !reduce.matches &&
-    stage?.dataset.motion !== 'paused' && width > 0 && height > 0;
+  const STEP = 40;
+  let width = 0, height = 0, dpr = 1, frame = 0, last = 0, elapsed = 0;
+  let printing = false, dark = root.dataset.theme === 'dark';
+  let px = 0, py = 0, tx = 0, ty = 0, influence = 0, targetInfluence = 0;
+  const points = [];
+  body.prepend(canvas);
+  const enabled = () => !reduce.matches && !printing && stage?.dataset.motion !== 'paused';
+  const running = () => enabled() && !document.hidden && width > 0 && height > 0;
+  const mod = (value, divisor) => ((value % divisor) + divisor) % divisor;
 
   function resize() {
-    const w = hero.clientWidth, h = hero.clientHeight;
-    if (!w || !h) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-    if (w === width && h === height && dpr === ratio) return;
-    width = w; height = h; ratio = dpr;
-    canvas.width = Math.round(w * ratio);
-    canvas.height = Math.round(h * ratio);
-    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    draw();
+    const w = root.clientWidth, h = window.innerHeight;
+    const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
+    if (w <= 0 || h <= 0) return;
+    if (w !== width || h !== height || ratio !== dpr) {
+      width = w; height = h; dpr = ratio;
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
     reconcile();
   }
 
   function draw() {
-    if (!width || !height) return;
+    if (!width || !height || !enabled()) return;
     ctx.clearRect(0, 0, width, height);
-    if (printing) return;
-    const ink = dark ? '171,201,187' : '71,105,94';
-    const neutral = dark ? '225,229,223' : '55,66,61';
-    const rgb = (color, alpha) => 'rgba(' + color + ',' + alpha.toFixed(4) + ')';
-    const compact = width < 620;
-    const count = nodes.length;
+    const mobile = width < 640;
+    const radius = mobile ? 150 : 240;
     const t = elapsed / 1000;
-    const rtl = root.dir === 'rtl';
-    const field = nodes.slice(0, count).map(n => {
-      const baseX = (rtl ? 1 - n.x : n.x) * width;
-      const baseY = n.y * height;
-      const dx = (pointerX * width - baseX), dy = (pointerY * height - baseY);
-      const influence = Math.max(0, 1 - Math.hypot(dx, dy) / 250) * pointerStrength;
-      return {
-        x: baseX + Math.sin(t * n.speed + n.phase) * 11 * n.depth + dx * influence * .085,
-        y: baseY + Math.cos(t * n.speed * .8 + n.phase) * 8 * n.depth + dy * influence * .085,
-        influence, n
-      };
-    });
-    // Fine network connections and moving signal packets along their paths.
-    ctx.lineWidth = compact ? .75 : .95;
-    for (const link of links) {
-      if (link.a >= count || link.b >= count) continue;
-      const a = field[link.a], b = field[link.b];
-      const pulse = (Math.sin(t * .8 + link.phase * 6.28) + 1) * .5;
-      const strength = Math.max(a.influence, b.influence);
-      const alpha = (dark ? .16 : .13) + pulse * .04 + strength * .10;
-      const mid = link.bend ? { x: a.x, y: b.y } : { x: b.x, y: a.y };
-      ctx.strokeStyle = rgb(ink, alpha);
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      // Mix direct links and right-angle traces to resemble a subtle circuit.
-      if (link.bend) ctx.lineTo(mid.x, mid.y);
-      ctx.lineTo(b.x, b.y);
+    const scroll = window.scrollY || 0;
+    const firstRow = Math.floor(scroll / STEP) - 1;
+    const rowCount = Math.ceil(height / STEP) + 4;
+    const colCount = Math.ceil(width / STEP) + 3;
+    // Shared vertices guarantee that every crossing, line and particle agrees.
+    const vertex = (row, col) => points[row * colCount + col];
+    for (let row = 0; row < rowCount; row++) {
+      for (let col = 0; col < colCount; col++) {
+        const x = (col - 1) * STEP;
+        const y = (firstRow + row) * STEP - scroll;
+        const dx = x - px, dy = y - py;
+        const distance = Math.hypot(dx, dy);
+        const falloff = Math.max(0, 1 - distance / radius);
+        const smooth = falloff * falloff * (3 - 2 * falloff);
+        // Local elastic wave, never a loose collection of independent sticks.
+        const ripple = influence * smooth * (5 + 8 * Math.sin(distance / 32 - t * 3.0));
+        const divisor = Math.max(18, distance);
+        const index = row * colCount + col;
+        const point = points[index] || (points[index] = {});
+        point.x = x + dx / divisor * ripple;
+        point.y = y + dy / divisor * ripple;
+      }
+    }
+
+    ctx.lineWidth = .85;
+    ctx.strokeStyle = dark ? 'rgba(245,244,239,.072)' : 'rgba(25,25,25,.071)';
+    ctx.beginPath();
+    for (let row = 0; row < rowCount; row++) {
+      for (let col = 0; col < colCount; col++) {
+        const point = vertex(row, col);
+        if (col === 0) ctx.moveTo(point.x, point.y);
+        else ctx.lineTo(point.x, point.y);
+      }
+    }
+    for (let col = 0; col < colCount; col++) {
+      for (let row = 0; row < rowCount; row++) {
+        const point = vertex(row, col);
+        if (row === 0) ctx.moveTo(point.x, point.y);
+        else ctx.lineTo(point.x, point.y);
+      }
+    }
+    ctx.stroke();
+    if (influence > .015) {
+      const glow = ctx.createRadialGradient(px, py, 0, px, py, radius);
+      const tint = dark ? '171,201,187' : '71,105,94';
+      glow.addColorStop(0, 'rgba(' + tint + ',' + (.14 * influence).toFixed(4) + ')');
+      glow.addColorStop(.55, 'rgba(' + tint + ',' + (.07 * influence).toFixed(4) + ')');
+      glow.addColorStop(1, 'rgba(' + tint + ',0)');
+      ctx.strokeStyle = glow;
       ctx.stroke();
-      if (link.pulse) {
-        const p = (t * .15 + link.phase) % 1;
-        let x, y;
-        if (link.bend) {
-          const first = Math.abs(mid.y - a.y);
-          const total = first + Math.abs(b.x - mid.x);
-          const dist = p * total;
-          if (dist < first) { x = a.x; y = a.y + (mid.y - a.y) * dist / (first || 1); }
-          else { x = mid.x + (b.x - mid.x) * (dist - first) / (total - first || 1); y = b.y; }
-        } else { x = a.x + (b.x - a.x) * p; y = a.y + (b.y - a.y) * p; }
-        ctx.fillStyle = rgb(ink, (dark ? .43 : .36) * Math.sin(Math.PI * p));
-        ctx.beginPath(); ctx.arc(x, y, 2.0, 0, Math.PI * 2); ctx.fill();
+    }
+
+    function dot(a, b, fraction, phase) {
+      if (!a || !b) return;
+      // Interpolation along the actual deformed segment, not a parallel path.
+      const x = a.x + (b.x - a.x) * fraction;
+      const y = a.y + (b.y - a.y) * fraction;
+      const pulse = .65 + .35 * Math.sin(t * .9 + phase);
+      const rgb = dark ? '171,201,187' : '71,105,94';
+      ctx.fillStyle = 'rgba(' + rgb + ',' + ((dark ? .43 : .34) * pulse).toFixed(4) + ')';
+      ctx.beginPath(); ctx.arc(x, y, mobile ? 1.65 : 2, 0, Math.PI * 2); ctx.fill();
+    }
+    // Sparse packets run along actual horizontal and vertical grid edges.
+    // Document-anchored rows remain consistent during scrolling.
+    const spacing = mobile ? 21 : 18;
+    for (let row = 0; row < rowCount; row++) {
+      const worldRow = firstRow + row;
+      if (mod(worldRow, mobile ? 7 : 5) !== 2) continue;
+      const phase = mod(worldRow * 7.137, spacing);
+      const speed = mod(worldRow, 2) ? .48 : -.48;
+      const cell = mod(phase + t * speed, spacing);
+      for (let x = cell - spacing; x < colCount; x += spacing) {
+        const col = Math.floor(x) + 1;
+        if (col < 0 || col + 1 >= colCount) continue;
+        dot(vertex(row, col), vertex(row, col + 1), x - Math.floor(x), phase);
       }
     }
-    // Drifting junctions, small rings and restrained cursor interaction.
-    for (let i = 0; i < field.length; i++) {
-      const { x, y, n, influence } = field[i];
-      const breathing = .5 + .5 * Math.sin(t * .9 + n.phase);
-      ctx.fillStyle = rgb(neutral, .17 + breathing * .14 + influence * .11);
-      ctx.beginPath(); ctx.arc(x, y, n.radius, 0, Math.PI * 2); ctx.fill();
-      if (i % 4 === 0) {
-        ctx.strokeStyle = rgb(ink, .09 + breathing * .08 + influence * .08);
-        ctx.beginPath(); ctx.arc(x, y, 5 + breathing * 4, 0, Math.PI * 2); ctx.stroke();
+    for (let col = 1; col < colCount - 1; col++) {
+      const worldCol = col - 1;
+      if (mod(worldCol, mobile ? 6 : 7) !== 3) continue;
+      const phase = mod(worldCol * 3.73, spacing);
+      const speed = mod(worldCol, 2) ? .36 : -.36;
+      const start = firstRow + mod(phase + t * speed - firstRow, spacing);
+      for (let y = start; y < firstRow + rowCount - 1; y += spacing) {
+        const row = Math.floor(y) - firstRow;
+        if (row < 0 || row + 1 >= rowCount) continue;
+        dot(vertex(row, col), vertex(row + 1, col), y - Math.floor(y), phase);
       }
     }
-    // Fade the field at its edges and behind the text, without overlaying the content.
-    ctx.save();
-    ctx.globalCompositeOperation = 'destination-in';
-    const vertical = ctx.createLinearGradient(0, 0, 0, height);
-    vertical.addColorStop(0, 'rgba(0,0,0,0)');
-    vertical.addColorStop(.06, 'rgba(0,0,0,1)');
-    vertical.addColorStop(.94, 'rgba(0,0,0,1)');
-    vertical.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = vertical; ctx.fillRect(0, 0, width, height);
-    const horizontal = ctx.createLinearGradient(0, 0, width, 0);
-    horizontal.addColorStop(0, 'rgba(0,0,0,.22)');
-    horizontal.addColorStop(.08, 'rgba(0,0,0,1)');
-    horizontal.addColorStop(.92, 'rgba(0,0,0,1)');
-    horizontal.addColorStop(1, 'rgba(0,0,0,.22)');
-    ctx.fillStyle = horizontal; ctx.fillRect(0, 0, width, height);
-    ctx.restore();
   }
 
   function tick(now) {
     frame = 0;
-    if (!canRun()) { last = 0; return; }
+    if (!running()) { last = 0; return; }
     if (!last || now - last >= 32) {
-      const dt = last ? Math.min(now - last, 64) : 33;
+      const dt = last ? Math.min(now - last, 70) : 33;
       last = now; elapsed += dt;
-      const blend = 1 - Math.exp(-dt / 170);
-      pointerX += (targetX - pointerX) * blend;
-      pointerY += (targetY - pointerY) * blend;
-      pointerStrength += (targetStrength - pointerStrength) * blend;
+      const blend = 1 - Math.exp(-dt / 110);
+      px += (tx - px) * blend;
+      py += (ty - py) * blend;
+      influence += (targetInfluence - influence) * blend;
       draw();
     }
     frame = requestAnimationFrame(tick);
   }
   function reconcile() {
-    if (canRun()) {
+    // Static CSS grid is the fallback for accessibility, print or pause.
+    const active = enabled() && width > 0 && height > 0;
+    canvas.hidden = !active;
+    if (active) body.dataset.liveGrid = '';
+    else delete body.dataset.liveGrid;
+    if (running()) {
       canvas.dataset.ambientState = 'running';
+      draw();
       if (!frame) { last = 0; frame = requestAnimationFrame(tick); }
     } else {
       if (frame) cancelAnimationFrame(frame);
       frame = 0; last = 0;
       canvas.dataset.ambientState = 'paused';
-      if (reduce.matches) { elapsed = 0; targetStrength = pointerStrength = 0; draw(); }
+      if (!active) influence = targetInfluence = 0;
     }
   }
 
-  hero.addEventListener('pointermove', event => {
-    if (!canRun() || !precise.matches || event.pointerType !== 'mouse') return;
-    const rect = hero.getBoundingClientRect();
-    targetX = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-    targetY = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
-    targetStrength = 1;
+  window.addEventListener('pointermove', event => {
+    if (!running() || !precise.matches || event.pointerType !== 'mouse') return;
+    if (targetInfluence === 0 && influence < .01) { px = event.clientX; py = event.clientY; }
+    tx = event.clientX; ty = event.clientY; targetInfluence = 1;
   }, { passive: true });
-  hero.addEventListener('pointerleave', () => { targetStrength = 0; });
-  hero.addEventListener('pointercancel', () => { targetStrength = 0; });
-  const visibility = new IntersectionObserver(entries => {
-    visible = entries.some(entry => entry.isIntersecting);
-    reconcile();
-  });
-  visibility.observe(hero);
-  const layout = new ResizeObserver(resize);
-  layout.observe(hero);
-  const theme = new MutationObserver(() => {
-    dark = root.dataset.theme === 'dark';
-    draw();
-  });
-  theme.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
-  stage?.querySelector('.motion-toggle')?.addEventListener('click', reconcile);
-  reduce.addEventListener('change', reconcile);
-  precise.addEventListener('change', () => { targetStrength = 0; });
-  document.addEventListener('visibilitychange', reconcile);
+  document.addEventListener('pointerout', event => { if (!event.relatedTarget) targetInfluence = 0; });
+  window.addEventListener('pointercancel', () => { targetInfluence = 0; });
+  window.addEventListener('blur', () => { targetInfluence = 0; });
   window.addEventListener('resize', resize, { passive: true });
+  window.addEventListener('scroll', () => { if (running()) draw(); }, { passive: true });
+  reduce.addEventListener('change', reconcile);
+  precise.addEventListener('change', () => { targetInfluence = 0; });
+  document.addEventListener('visibilitychange', reconcile);
+  stage?.querySelector('.motion-toggle')?.addEventListener('click', reconcile);
+  if (window.MutationObserver) {
+    const theme = new MutationObserver(() => {
+      dark = root.dataset.theme === 'dark';
+      if (enabled()) draw();
+    });
+    theme.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+  }
   window.addEventListener('beforeprint', () => { printing = true; reconcile(); });
-  window.addEventListener('afterprint', () => { printing = false; draw(); reconcile(); });
+  window.addEventListener('afterprint', () => { printing = false; reconcile(); });
   resize();
 }
-initHeroAmbient();
+initPageGrid();
