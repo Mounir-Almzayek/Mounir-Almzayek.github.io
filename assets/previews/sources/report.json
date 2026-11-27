@@ -38,67 +38,57 @@
     "status": "existing genuine image"
   },
   {
+    "name": "Swimmer Craftsman",
+    "status": "existing genuine image"
+  },
+  {
+    "name": "Zaker",
+    "status": "captured",
+    "files": [
+      "assets/previews/sources/zaker-1.png",
+      "assets/previews/sources/zaker-2.png",
+      "assets/previews/sources/zaker-3.png"
+    ]
+  },
+  {
     "name": "Mazed POS",
     "status": "existing genuine image"
   },
   {
-    "name": "Swimmer Craftsman",
-    "status": "captured",
-    "files": [
-      "assets/previews/sources/swimmer-craftsman-1.png",
-      "assets/previews/sources/swimmer-craftsman-2.png",
-      "assets/previews/sources/swimmer-craftsman-3.png"
-    ]
+    "name": "King Abdulaziz Center Survey",
+    "status": "existing genuine image"
   },
   {
     "name": "OVA — Ovaluate",
     "status": "existing genuine image"
   },
   {
-    "name": "King Abdulaziz Center Survey",
-    "status": "captured",
-    "kind": "Public source repository · not an app screenshot",
-    "url": "https://github.com/Mounir-Almzayek/survey-app",
-    "path": "assets/previews/sources/project-09.jpg"
-  },
-  {
     "name": "Visitors Management",
-    "status": "captured",
-    "kind": "Public source repository · not an app screenshot",
-    "url": "https://github.com/Mounir-Almzayek/visitors",
-    "path": "assets/previews/sources/project-11.jpg"
+    "status": "existing genuine image"
   },
   {
     "name": "Autonomous Deterministic Agent System",
-    "status": "captured",
-    "kind": "Public source repository · not an app screenshot",
-    "url": "https://github.com/Mounir-Almzayek/autonomous-deterministic-agent-system",
-    "path": "assets/previews/sources/project-12.jpg"
+    "status": "existing genuine image"
   },
   {
     "name": "Adaptive Agentic RAG",
     "status": "existing genuine image"
   },
   {
-    "name": "Arabic Quran ASR",
-    "status": "captured",
-    "kind": "Public source repository · not an app screenshot",
-    "url": "https://github.com/Mounir-Almzayek/quran-fastconformer-colab",
-    "path": "assets/previews/sources/project-16.jpg"
-  },
-  {
     "name": "RS4IT MCP Hub",
-    "status": "captured",
-    "kind": "Public source repository · not an app screenshot",
-    "url": "https://github.com/Mounir-Almzayek/Rs4it-MCP",
-    "path": "assets/previews/sources/project-14.jpg"
+    "status": "existing genuine image"
   },
   {
     "name": "Resume Analyst AI",
-    "status": "captured",
-    "kind": "Public source repository · not an app screenshot",
-    "url": "https://github.com/Mounir-Almzayek/CV-management",
-    "path": "assets/previews/sources/project-15.jpg"
+    "status": "existing genuine image"
+  },
+  {
+    "name": "Arabic Quran ASR",
+    "status": "existing genuine image"
+  },
+  {
+    "name": "E-commerce Backend Engine",
+    "status": "existing genuine image"
   },
   {
     "name": "M.O.U.N.I.R",
@@ -107,132 +97,62 @@
   },
   {
     "name": "AutoContent AI",
-    "status": "captured",
-    "kind": "Original public repository asset",
-    "url": "https://raw.githubusercontent.com/Mounir-Almzayek/AutoContent-AI/main/docs/screenshot/Screenshot%202026-03-12%20151520.png",
-    "path": "assets/previews/sources/project-19.jpg"
+    "status": "existing genuine image"
   },
   {
     "name": "Advanced Neural Network Framework",
-    "status": "captured",
-    "kind": "Public source repository · not an app screenshot",
-    "url": "https://github.com/Mounir-Almzayek/Simple-Neural-Network",
-    "path": "assets/previews/sources/project-20.jpg"
-  },
-  {
-    "name": "E-commerce Backend Engine",
-    "status": "captured",
-    "kind": "Public source repository · not an app screenshot",
-    "url": "https://github.com/Mounir-Almzayek/High-Performance-E-Commerce-Backend-Engine",
-    "path": "assets/previews/sources/project-17.jpg"
-  },
-  {
-    "name": "Zaker",
-    "status": "fallback",
-    "errors": [
-      {
-        "url": "https://zaker.misbar.education/",
-        "error": "Error: page.goto: net::ERR_NAME_NOT_RESOLVED at https://zaker.misbar.education/\nCall log:\n  - navigating to \"https://zaker.misbar.education/\", waiting until \"domcontentloaded\"\n"
-      },
-      {
-        "url": "https://play.google.com/store/apps/details?id=com.misbar.zaker",
-        "error": "Error: page.goto: Navigation to \"https://play.google.com/store/apps/details?id=com.misbar.zaker\" is interrupted by another navigation to \"chrome-error://chromewebdata/\"\nCall log:\n  - navigating to \"https://play.google.com/store/apps/details?id=com.misbar.zaker\", waiting until \"domcontentloaded\"\n"
-      },
-      {
-        "url": "https://github.com/Mounir-Almzayek/Zaker-App",
-        "error": "Error: page.goto: Navigation to \"https://github.com/Mounir-Almzayek/Zaker-App\" is interrupted by another navigation to \"https://play.google.com/store/apps/details?id=com.misbar.zaker\"\nCall log:\n  - navigating to \"https://github.com/Mounir-Almzayek/Zaker-App\", waiting until \"domcontentloaded\"\n"
-      }
-    ]
-  },
-  {
-    "name": "OpenRouter FastAPI Template",
-    "status": "captured",
-    "kind": "Public source repository · not an app screenshot",
-    "url": "https://github.com/Mounir-Almzayek/Open-Router",
-    "path": "assets/previews/sources/project-22.jpg"
+    "status": "existing genuine image"
   },
   {
     "name": "Solar Intelligence — Research Portal",
-    "status": "captured",
-    "kind": "Public source repository · not an app screenshot",
-    "url": "https://github.com/Mounir-Almzayek/fifth-year-research",
-    "path": "assets/previews/sources/project-21.jpg"
+    "status": "existing genuine image"
+  },
+  {
+    "name": "OpenRouter FastAPI Template",
+    "status": "existing genuine image"
   },
   {
     "name": "Clinic Hub",
-    "status": "captured",
-    "kind": "Public source repository · not an app screenshot",
-    "url": "https://github.com/Mounir-Almzayek/Clinic-Hub",
-    "path": "assets/previews/sources/project-23.jpg"
-  },
-  {
-    "name": "Wasfeh",
-    "status": "captured",
-    "kind": "Original public repository asset",
-    "url": "https://raw.githubusercontent.com/Mounir-Almzayek/Wasfeh/main/assets/images/wasfeh.png",
-    "path": "assets/previews/sources/project-26.jpg"
-  },
-  {
-    "name": "Clothing Game",
-    "status": "captured",
-    "kind": "Public source repository · not an app screenshot",
-    "url": "https://github.com/Mounir-Almzayek/Clothing-Game",
-    "path": "assets/previews/sources/project-28.jpg"
-  },
-  {
-    "name": "CIMT Arm",
-    "status": "captured",
-    "kind": "Public source repository · not an app screenshot",
-    "url": "https://github.com/Mounir-Almzayek/cimt-arm",
-    "path": "assets/previews/sources/project-27.jpg"
+    "status": "existing genuine image"
   },
   {
     "name": "Sold Out / Order Application",
-    "status": "captured",
-    "kind": "Public source repository · not an app screenshot",
-    "url": "https://github.com/Mounir-Almzayek/Order-Application-",
-    "path": "assets/previews/sources/project-25.jpg"
+    "status": "existing genuine image"
+  },
+  {
+    "name": "Wasfeh",
+    "status": "existing genuine image"
+  },
+  {
+    "name": "CIMT Arm",
+    "status": "existing genuine image"
+  },
+  {
+    "name": "Clothing Game",
+    "status": "existing genuine image"
   },
   {
     "name": "Minesweeper",
-    "status": "captured",
-    "kind": "Public source repository · not an app screenshot",
-    "url": "https://github.com/Mounir-Almzayek/Minesweeper",
-    "path": "assets/previews/sources/project-29.jpg"
-  },
-  {
-    "name": "Cinema Booking System",
-    "status": "captured",
-    "kind": "Public source repository · not an app screenshot",
-    "url": "https://github.com/Mounir-Almzayek/Cinema_Java_Swing_Project",
-    "path": "assets/previews/sources/project-32.jpg"
-  },
-  {
-    "name": "SQL Compiler",
-    "status": "captured",
-    "kind": "Public source repository · not an app screenshot",
-    "url": "https://github.com/Mounir-Almzayek/SQL-Compiler",
-    "path": "assets/previews/sources/project-31.jpg"
+    "status": "existing genuine image"
   },
   {
     "name": "Connect Four",
-    "status": "captured",
-    "kind": "Public source repository · not an app screenshot",
-    "url": "https://github.com/Mounir-Almzayek/Connect-Four",
-    "path": "assets/previews/sources/project-30.jpg"
+    "status": "existing genuine image"
+  },
+  {
+    "name": "SQL Compiler",
+    "status": "existing genuine image"
+  },
+  {
+    "name": "Cinema Booking System",
+    "status": "existing genuine image"
   },
   {
     "name": "Trees &amp; Graphs in Java",
-    "status": "captured",
-    "kind": "Public source repository · not an app screenshot",
-    "url": "https://github.com/Mounir-Almzayek/Trees-and-Graphs-in-Java",
-    "path": "assets/previews/sources/project-33.jpg"
+    "status": "existing genuine image"
   },
   {
     "name": "Tree Representations",
-    "status": "captured",
-    "kind": "Public source repository · not an app screenshot",
-    "url": "https://github.com/Mounir-Almzayek/Tree-representations-and-dealing-with-papers",
-    "path": "assets/previews/sources/project-34.jpg"
+    "status": "existing genuine image"
   }
 ]
