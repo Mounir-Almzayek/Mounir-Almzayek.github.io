@@ -12,7 +12,7 @@ concurrency:
 jobs:
   capture:
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -30,7 +30,8 @@ jobs:
           const browser = await chromium.launch({headless:true});
           const targets = [
             {name:'tebyan',url:'https://tebyan-website.tebyan-sy-official.workers.dev/ar',original:'https://tebyan-website.tebyan-sy-official.workers.dev/experience/09-mosque-prayer-display.avif',label:'Tebyan'},
-            {name:'liqaa',url:'https://www.byliqaa.me/ar',original:'https://www.byliqaa.me/images/landing/steps-invitation-arch.png',label:'Liqaa'}
+            {name:'liqaa',url:'https://www.byliqaa.me/ar',original:'https://www.byliqaa.me/images/landing/steps-invitation-arch.png',label:'Liqaa'},
+            {name:'mazeed',url:'https://mazeed.arambs.com/',label:'Mazeed'}
           ];
           let html=fs.readFileSync('index.html','utf8');
           const report=[];
@@ -47,10 +48,53 @@ jobs:
               const path='assets/previews/'+target.name+'.jpg';
               await page.screenshot({path,type:'jpeg',quality:88,animations:'disabled'});
               const old='src="'+target.original+'"';
-              if(html.includes(old)) html=html.replace(old,'src="'+path+'"');
+              if(target.original && html.includes(old)) html=html.replace(old,'src="'+path+'"');
+              if(target.name==='mazeed') html=html.replace(/<div class="site-placeholder">MAZEED <span>Product website ↗<\/span><\/div>/,'<img src="'+path+'" alt="Live Mazeed product website" loading="lazy" decoding="async">');
               report.push({project:target.label,title,url:page.url(),status:'captured',path});
             }catch(error){report.push({project:target.label,status:'failed',error:String(error)});}
             finally{await page.close();}
+          }
+          const apps=[
+            {key:'saudi-cup',title:'The Saudi Cup',id:'com.app.saudicup',fallback:'https://play-lh.googleusercontent.com/-ywx5qibX3HF4LmxLXCn_kBFfdoMpdvkrMieNbao_UjIDEfTj7OJdpcPerf5nKnqB64=w526-h296'},
+            {key:'bin-taleb',title:'Bin Taleb',id:'com.rs4it.bin_taleb',fallback:'https://play-lh.googleusercontent.com/4vJnJhOpb_0xzukaMawh8ow-sNG9SPExPqukLYn4U6BB99YEVnwF39jUTOvX0oSRPw4tTPSwJ1Zii6jFts6r-A=w526-h296'},
+            {key:'swimmer',title:'The Swimmer',id:'com.rs4it.swimmer',fallback:'https://play-lh.googleusercontent.com/Qbf-ka13hO_2a0bAft1vTVGIL8EZVAu5-yFJenW1-8OTBWyGWaAlws2QSMEJSW1x6EQj1tJCFtnE9lfLhItZBg=w526-h296'}
+          ];
+          for(const app of apps){
+            const page=await browser.newPage({viewport:{width:1440,height:1000},locale:'en-US'});
+            const store='https://play.google.com/store/apps/details?id='+app.id;
+            const saved=[];
+            let sources=[];
+            try{
+              const response=await page.goto(store+'&hl=en&gl=SA',{waitUntil:'domcontentloaded',timeout:35000});
+              if(!response?.ok())throw Error('Store HTTP '+response?.status());
+              await page.locator('img[alt*="Screenshot" i]').first().waitFor({timeout:12000});
+              sources=await page.locator('img[alt*="Screenshot" i]').evaluateAll(imgs=>imgs.map(i=>i.getAttribute('src')||i.currentSrc).filter(Boolean));
+            }catch(error){console.log(app.title+' listing: '+error);}
+            const candidates=[...new Set([...sources,app.fallback].filter(url=>{try{return new URL(url).hostname==='play-lh.googleusercontent.com'}catch{return false}}).map(url=>url.replace(/=w\d+-h\d+.*$/,'')+'=w720-h1280'))];
+            for(const src of candidates.slice(0,8)){
+              if(saved.length===3)break;
+              try{
+                const response=await page.request.get(src,{timeout:15000});
+                const mime=(response.headers()['content-type']||'').split(';')[0];
+                const ext={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[mime];
+                if(!response.ok()||!ext)continue;
+                const bytes=await response.body();
+                if(bytes.length<2000||bytes.length>8000000)continue;
+                const dest='assets/previews/'+app.key+'-'+(saved.length+1)+'.'+ext;
+                fs.writeFileSync(dest,bytes);saved.push({path:dest,source:src});
+              }catch(error){console.log(app.title+' image: '+error)}
+            }
+            if(saved.length){
+              const imageTags=saved.map((img,i)=>'<img src="'+img.path+'" alt="'+app.title+' official Google Play screenshot '+(i+1)+'" loading="lazy" decoding="async">').join('');
+              const start=html.indexOf('data-store-gallery="'+app.key+'"');
+              if(start<0)throw Error('Missing gallery '+app.key);
+              const close=html.indexOf('</figure>',start);
+              const markup=html.slice(start,close);
+              const replaced=markup.replace(/<a\b[^>]*>[\s\S]*?<\/a>/,'<a class="store-gallery" style="grid-template-columns:repeat('+saved.length+',minmax(0,1fr))" href="'+store+'" aria-label="Open '+app.title+' on Google Play">'+imageTags+'</a>');
+              html=html.slice(0,start)+replaced+html.slice(close);
+            }
+            report.push({project:app.title,url:store,status:saved.length?'captured':'fallback',screenshots:saved});
+            await page.close();
           }
           fs.writeFileSync('index.html',html);
           fs.writeFileSync('assets/previews/report.json',JSON.stringify(report,null,2)+'\n');
@@ -74,7 +118,14 @@ jobs:
             await page.locator('#theme-toggle').click();
             await page.locator('[data-filter="ai"]').click();
             if(await page.locator('.project:not([hidden])').count()===0)throw Error('AI filter failed');
+            await page.locator('[data-filter="published"]').click();
+            if(await page.locator('.project:not([hidden])').count()!==3)throw Error('Published app filter failed');
+            if(await page.locator('.project-group:not([hidden])').count()!==1)throw Error('Empty groups not hidden');
             await page.locator('[data-filter="all"]').click();
+            if(await page.locator('.project-group:not([hidden])').count()!==4)throw Error('Expected four project groups');
+            if(await page.locator('.app-card .project-links a').count()!==6)throw Error('Missing official mobile app links');
+            const missingLocal=await page.locator('img[src^="assets/previews/"]').evaluateAll(async imgs=>{await Promise.all(imgs.map(i=>{i.loading='eager';return i.decode().catch(()=>{})}));return imgs.filter(i=>!i.naturalWidth).map(i=>i.src)});
+            if(missingLocal.length)throw Error('Missing local preview '+missingLocal.join(', '));
             if(await page.locator('.project:not([hidden])').count()!==13)throw Error('Expected 13 project cards');
             if(await page.locator('#resumes a[href*="drive.google.com/file/d/"]').count()!==4)throw Error('Missing original CV links');
             if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2))throw Error('Horizontal overflow at '+width);
