@@ -859,6 +859,7 @@ function initAppPreviews() {
       },
       addCapture(src) {
         const img = image(src, words.capture, false);
+        img.loading = 'eager';
         img.hidden = true;
         frames.push(img); anchor.append(img);
         img.addEventListener('load', () => {
@@ -980,7 +981,7 @@ function initAppPreviews() {
   window.addEventListener('beforeprint', () => entries.forEach(entry => entry.stop()));
   window.addEventListener('afterprint', reschedule);
   // Only audited, locally captured screenshots can augment the official imagery.
-  fetch('/assets/previews/website-captures.json', { credentials: 'same-origin' })
+  fetch('/assets/previews/website-captures.json', { credentials: 'same-origin', cache: 'no-cache' })
     .then(response => response.ok ? response.json() : [])
     .then(captures => {
       for (const entry of entries) {
