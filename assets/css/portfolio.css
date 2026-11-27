@@ -203,7 +203,8 @@ body { background-color:var(--bg);background-image:linear-gradient(var(--grid) 1
 .group-heading p { font-size:14px;color:var(--muted);margin:5px 0 0 }
 .group-heading>.label { padding-top:6px }
 .group-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px }
-.project-group[data-project-group=apps] .group-grid { grid-template-columns:repeat(3,minmax(0,1fr)) }
+.project-group[data-project-group=apps] .group-grid { grid-template-columns:repeat(2,minmax(0,1fr)) }
+.project-group[data-project-group=engineering] .group-grid { grid-template-columns:repeat(3,minmax(0,1fr)) }
 .project { min-width:0 }
 .projectbody { gap:4px }
 .projectbody h3 { margin:7px 0 2px }
@@ -232,7 +233,7 @@ body { background-color:var(--bg);background-image:linear-gradient(var(--grid) 1
 @media(max-width:850px) {
   .hero { grid-template-columns:minmax(0,1fr) minmax(180px,.45fr);gap:24px;padding:54px 0 34px }
   .hero h1 { font-size:clamp(46px,8vw,75px) }
-  .project-group[data-project-group=apps] .group-grid { grid-template-columns:repeat(2,minmax(0,1fr)) }
+  .project-group[data-project-group=engineering] .group-grid { grid-template-columns:repeat(2,minmax(0,1fr)) }
   .profile-panel { max-width:260px }
   .track { margin-bottom:30px }
 }
@@ -245,7 +246,7 @@ body { background-color:var(--bg);background-image:linear-gradient(var(--grid) 1
   .group-heading { grid-template-columns:1fr;gap:5px }
   .group-heading h3 { font-size:23px }
   .project-group { margin:26px 0 38px }
-  .group-grid, .project-group[data-project-group=apps] .group-grid, .cv-grid { grid-template-columns:1fr }
+  .group-grid, .project-group[data-project-group=apps] .group-grid, .project-group[data-project-group=engineering] .group-grid, .cv-grid { grid-template-columns:1fr }
   .app-shot .store-gallery img { height:220px }
 }
 @media print {
