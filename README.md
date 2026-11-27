@@ -1,35 +1,32 @@
 # Mounir Almzayek — Engineering Portfolio
 
-A lightweight, English-first portfolio for AI systems, Flutter and backend engineering.
+English-first, responsive personal portfolio for AI systems, mobile and backend engineering.
 
-**Site:** https://mounir-almzayek.github.io/
+**Live site:** https://mounir-almzayek.github.io/
 
-## Development
+## Design and development
 
-Open `index.html` directly, or run `python -m http.server 8000` from the repository root. No dependencies, build tools or third-party scripts required.
+Warm monochrome editorial design with a technical square grid, serif headings, grayscale GitHub avatar, color project imagery, light/dark modes, responsive project cards, filters, accessible keyboard focus and reduced-motion support.
 
-The site uses semantic HTML, responsive CSS, native disclosure elements, accessible project filters, reduced-motion support and print styling. Project diagrams are conceptual illustrations, not live product screenshots or telemetry. Public project links point to source repositories or product pages. Private employer source is not linked.
+Run `python -m http.server 8000` from the repository root and open http://localhost:8000/. The static site requires no build tools.
 
-## Deployment
+## Projects and real previews
 
-GitHub Pages: Settings → Pages → Deploy from a branch → `main` / `(root)`. Leave Custom domain empty. The obsolete `wusol.me` CNAME was removed. Verify the Pages configuration and deployment separately.
+The site presents 13 projects. Product images link to their public product websites or official store listings. Projects without a verified public demo link to source code where available. Architecture diagrams are conceptual, not screenshots. Tebyan and Liqaa have real browser screenshots committed under `assets/previews/`; capture results are recorded in `assets/previews/report.json`.
 
-## Design references
+## Original résumés
 
-- [Brittany Chiang](https://brittanychiang.com/) — concise experience hierarchy.
-- [Marco Ayuste](https://marcoayuste.com/) — evidence-linked case studies.
-- [AviosIT](https://aviosit.com/) — AI engineering focus.
-- [Hitarth Parmar](https://www.hitarthparmar.com/work) — product case studies.
+- [AI Engineer (PDF)](https://drive.google.com/file/d/1L0Kv14K_9IBZGl-WItLgBzOv5r8aYgRd/view)
+- [Senior Flutter Developer (PDF)](https://drive.google.com/file/d/1CwH3t3xQCmHAD_zrIDDCa_Pfjm2AVFXm/view)
+- [Full Stack Developer (PDF)](https://drive.google.com/file/d/1ouUB6ya0AmSmAkgcGvieEnZ8rs05EJ7g/view)
+- [Software Engineer — Comprehensive (PDF)](https://drive.google.com/file/d/1ozoNWNlehc8GAY3pSyxdtsK2wCMXKw-Q/view)
 
-The implementation is original; no third-party portfolio source code or assets are copied.
+The homepage links directly to the original Drive files for viewing and downloading, without creating replacement CVs. All four were verified to have anyone-reader access. Legacy HTML résumé pages remain for compatibility but are no longer linked from the homepage.
 
-## Public résumé profiles
+## Verification and deployment
 
-- [AI Engineer](https://mounir-almzayek.github.io/cv/ai.html)
-- [Flutter / Mobile](https://mounir-almzayek.github.io/cv/mobile.html)
-- [Full-Stack / Backend](https://mounir-almzayek.github.io/cv/backend.html)
-- [Comprehensive software engineering](https://mounir-almzayek.github.io/cv/software.html)
+GitHub Pages deploys from `main` / root. The **Capture portfolio previews and smoke test** workflow captures live previews using Playwright, verifies the layout at 1440px and 390px, checks filters, dark mode, original CV links and JavaScript errors, and commits the captured assets after successful tests. Its verification artifact contains the browser screenshots and capture report.
 
-Each HTML résumé can be downloaded or printed to PDF; the private original CV PDFs are intentionally not published. The home page features 13 projects, an interactive conceptual Tebyan walkthrough, and public product imagery from Tebyan, Liqaa, official Google Play listings, and a cropped RAG repository screenshot. The image sources are remote; the original full RAG image is already public in its repository. The site uses source links and graceful fallbacks for unavailable remote images. No private project source, analytics trackers, or live application data are embedded.
+A GitHub Actions bot commit may not itself trigger branch-based Pages deployment; verify a subsequent Pages run after refreshing preview assets. No private project source or live application data are embedded.
 
-A sitemap and robots.txt are provided for search engine discovery.
+A sitemap and robots.txt support search discovery.
