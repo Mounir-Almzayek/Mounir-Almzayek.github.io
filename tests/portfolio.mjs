@@ -19,6 +19,9 @@ try {
     assert.equal(await photo.evaluate(img => getComputedStyle(img).filter), 'none');
     assert.equal(await page.locator('.project').count(), 18);
     assert.equal(await page.locator('.project-group').count(), 4);
+    const columns = async group => page.locator('[data-project-group="' + group + '"] .group-grid').evaluate(grid => getComputedStyle(grid).gridTemplateColumns.split(/\s+/).length);
+    assert.equal(await columns('apps'), width <= 560 ? 1 : 2);
+    assert.equal(await columns('engineering'), width <= 560 ? 1 : width <= 850 ? 2 : 3);
     assert.equal(await page.locator('.project figure').count(), 18);
     assert.equal(await page.locator('[data-project-group="archive"]').count(), 0);
     assert.equal(await page.locator('#resumes a[href*="drive.google.com/file/d/"]').count(), 4);
