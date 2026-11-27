@@ -184,6 +184,45 @@ function initPortfolioMotion() {
   const pending = new Map();
   const typing = new Map();
 
+  // Deliberately sparse emphasis: evidence and recruiter-relevant differentiators.
+  const recruiterTerms = [
+    ['.hero-role', 'AI & Software Engineer', 'مهندس ذكاء اصطناعي وبرمجيات'],
+    ['.hero .lede', 'reliable mobile products', 'تطبيقات جوال موثوقة'],
+    ['[data-project-group="apps"] .group-heading h3', 'Published mobile applications', 'تطبيقات الجوال المنشورة'],
+    ['.projectbody > p', 'constrained hardware', 'محدودية موارد الأجهزة'],
+    ['.projectbody > h3', 'The Saudi Cup', 'The Saudi Cup'],
+    ['[data-role="aram"] .role-details li', 'ERP and payment workflows', 'عمليات ERP والدفع'],
+    ['[data-role="ovaluate"] h3', 'Generative AI Engineer', 'Generative AI Engineer'],
+    ['[data-role="rs4it-ai"] h3', 'LLM Agents & Automation', 'LLM Agents & Automation'],
+    ['[data-role="rs4it-flutter"] .role-details li', '6+ production Flutter applications', 'أكثر من 6 تطبيقات Flutter إنتاجية'],
+    ['[data-role="rs4it-flutter"] .role-details li', 'architecture standards', 'معايير المعمارية'],
+    ['#contact h2', 'that matters.', 'يصنع فرقاً.']
+  ];
+  const localeIndex = document.documentElement.lang === 'ar' ? 2 : 1;
+  // Wrap only the existing text node, after typing finishes. No duplicate text,
+  // no change to accessible names, and no broad keyword matching across the site.
+  const highlights = recruiterTerms.flatMap(rule => [...document.querySelectorAll(rule[0])]
+    .filter(node => node.textContent.includes(rule[localeIndex]))
+    .map(node => ({ node, phrase: rule[localeIndex], done: false })));
+  function highlightWithin(scope, animate = true) {
+    for (const item of highlights) {
+      if (item.done || !scope.contains(item.node) || item.node.closest('[data-motion-typing]')) continue;
+      const part = [...item.node.childNodes].find(child =>
+        child.nodeType === Node.TEXT_NODE && child.data.includes(item.phrase));
+      if (!part) continue;
+      const offset = part.data.indexOf(item.phrase);
+      const range = document.createRange();
+      range.setStart(part, offset);
+      range.setEnd(part, offset + item.phrase.length);
+      const mark = document.createElement('span');
+      mark.className = 'recruiter-underline';
+      mark.dataset.underlineDirection = /[\u0600-\u06ff]/.test(item.phrase) ? 'rtl' : 'ltr';
+      if (animate && !reduced.matches && !printing && !document.hidden) mark.classList.add('draw-underline');
+      range.surroundContents(mark);
+      item.done = true;
+    }
+  }
+
   function play(node, frames, options, kind = 'reveal') {
     if (!node || reduced.matches || document.hidden || printing) return;
     const animation = node.animate(frames, { easing: ease, ...options });
@@ -257,6 +296,7 @@ function initPortfolioMotion() {
       node.style.position = position;
       delete node.dataset.motionTyping;
       typing.delete(node);
+      highlightWithin(node);
     };
     const blink = caret.animate([{ opacity: 1 }, { opacity: 0, offset: .55 }, { opacity: 1 }],
       { duration: 720, iterations: Infinity, easing: 'steps(1, end)' });
@@ -292,6 +332,7 @@ function initPortfolioMotion() {
       if (rect.bottom <= 0 || node.contains(document.activeElement)) {
         releasePending(node);
         seen.add(node);
+        highlightWithin(node, false);
       } else if (rect.top <= line || (atBottom && rect.top < height)) {
         ready.push({ node, rect });
       } else if (!pending.has(node)) {
@@ -335,11 +376,15 @@ function initPortfolioMotion() {
     if (!node || seen.has(node)) return;
     seen.add(node);
     // Never animate away content which already has keyboard focus.
-    if (node.contains(document.activeElement)) return;
-    play(node, [
+    if (node.contains(document.activeElement)) { highlightWithin(node, false); return; }
+    const reveal = play(node, [
       { opacity, translate: x + 'px ' + y + 'px' },
       { opacity: 1, translate: '0 0' }
     ], { duration, delay, fill: 'backwards' });
+    if (reveal) {
+      reveal.addEventListener('finish', () => highlightWithin(node), { once: true });
+      reveal.addEventListener('cancel', () => highlightWithin(node, false), { once: true });
+    } else highlightWithin(node, false);
   }
 
   function start() {
@@ -371,7 +416,7 @@ function initPortfolioMotion() {
             enter(node, { delay: 440 + i * 130, x: (i % 2 ? -1 : 1) * 22, y: 18, duration: 920, opacity: .2 });
           });
         }
-      }
+      } else if (hero) highlightWithin(hero, false);
     }
     scan();
     if (typeof ResizeObserver === 'function') {
@@ -412,7 +457,7 @@ function initPortfolioMotion() {
   // Preserve usability during rapid keyboard navigation, printing and preference changes.
   document.addEventListener('focusin', event => {
     for (const node of [...pending.keys()]) {
-      if (node.contains(event.target)) { releasePending(node); seen.add(node); }
+      if (node.contains(event.target)) { releasePending(node); seen.add(node); highlightWithin(node, false); }
     }
     for (const [node, finish] of typing) if (node.contains(event.target)) finish();
     for (const animation of active) {
@@ -430,11 +475,12 @@ function initPortfolioMotion() {
   window.addEventListener('scroll', scheduleScan, { passive: true });
   window.addEventListener('resize', scheduleScan, { passive: true });
   window.addEventListener('hashchange', scheduleScan);
-  reduced.addEventListener('change', () => { if (reduced.matches) stop(); else start(); });
+  reduced.addEventListener('change', () => { if (reduced.matches) { stop(); highlightWithin(document, false); } else start(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); else start(); });
   window.addEventListener('beforeprint', () => { printing = true; stop(); });
   window.addEventListener('afterprint', () => { printing = false; start(); });
-  start();
+  if (reduced.matches) highlightWithin(document, false);
+  else start();
 }
 initPortfolioMotion();
 
