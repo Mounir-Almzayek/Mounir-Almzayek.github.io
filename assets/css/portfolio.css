@@ -433,3 +433,23 @@ html[lang=ar] .specialty-item strong,html[lang=ar] .specialty-item small { lette
 @media(max-width:620px) { .credential-grid,.community-grid { grid-template-columns:1fr } .job-meta { flex-direction:row;flex-wrap:wrap;gap:6px 12px;align-items:center } .credential-card,.community-card { padding:16px } }
 @media(max-width:560px) { .app-shot .store-gallery img { height:clamp(145px,50vw,250px) } }
 @media print { .credential-card,.community-card,.community-note { break-inside:avoid } }
+
+/* Authentic organization media and credential previews. */
+.brand-identity { display:flex;align-items:center;gap:10px;min-width:0 }
+.brand-mark { display:inline-flex;position:relative;width:44px;height:44px;flex:0 0 44px;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:5px;background:var(--bg);overflow:hidden;vertical-align:middle }
+.brand-initials { font:600 12px/1 var(--mono);color:var(--muted);letter-spacing:.03em }
+.brand-mark img { display:block;width:100%;height:100%;padding:5px;object-fit:contain;background:#fff;position:absolute;inset:0 }
+.brand-mark img[data-failed] { display:none }
+.job .org { margin:9px 0 2px }
+.credential-visual { margin:0;min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:3px;background:var(--bg) }
+.credential-art { min-height:200px;display:flex;flex-direction:column;justify-content:space-between;gap:16px;padding:20px;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:30px 30px }
+.credential-art-top { display:flex;align-items:center;gap:9px;color:var(--muted);font-size:12px }
+.credential-art-title { display:block;font-size:clamp(16px,1.8vw,23px);line-height:1.4;font-weight:600;color:var(--ink);max-width:34ch }
+.credential-preview-id,.credential-preview-caption { font-size:11px;color:var(--muted);overflow-wrap:anywhere }
+.credential-preview-caption { background:var(--bg);padding:5px 7px;align-self:flex-start;border:1px solid var(--line) }
+.credential-original { display:block;width:100%;aspect-ratio:1.55;object-fit:contain;background:#fff }
+.credential-visual figcaption { padding:8px 10px;font-size:11px;color:var(--muted);border-top:1px solid var(--line) }
+.credential-actions { display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:auto;font-size:12px;color:var(--muted) }
+.credential-actions .pill { padding:7px 10px;font-size:12px }
+.community-card .brand-mark { width:36px;height:36px;flex-basis:36px }
+@media(max-width:620px) { .credential-art { min-height:180px;padding:16px } .brand-mark { width:38px;height:38px;flex-basis:38px } }
