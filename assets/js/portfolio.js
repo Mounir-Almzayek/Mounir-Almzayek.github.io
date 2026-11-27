@@ -610,20 +610,20 @@ function initHeroAmbient() {
     seed = (seed * 1664525 + 1013904223) >>> 0;
     return seed / 4294967296;
   };
-  for (let i = 0; i < 29; i++) {
+  for (let i = 0; i < 32; i++) {
     nodes.push({
-      x: .035 + random() * .93, y: .06 + random() * .88,
-      phase: random() * Math.PI * 2, speed: .12 + random() * .19,
-      depth: .45 + random() * .8, radius: .7 + random() * 1.3
+      x: .055 + (i % 8) * .127 + (random() - .5) * .046, y: .12 + Math.floor(i / 8) * .25 + (random() - .5) * .10,
+      phase: random() * Math.PI * 2, speed: .19 + random() * .21,
+      depth: .45 + random() * .8, radius: 1.2 + random() * 1.5
     });
   }
   for (let i = 0; i < nodes.length; i++) {
     const nearest = nodes.map((n, j) => ({
       j, d: Math.hypot(n.x - nodes[i].x, (n.y - nodes[i].y) * .65)
-    })).filter(n => n.j !== i && n.d < .25).sort((a, b) => a.d - b.d).slice(0, 2);
+    })).filter(n => n.j !== i && n.d < .21).sort((a, b) => a.d - b.d).slice(0, 2);
     for (const n of nearest) {
       if (!links.some(link => (link.a === i && link.b === n.j) || (link.a === n.j && link.b === i))) {
-        links.push({ a: i, b: n.j, phase: random(), pulse: random() < .48, bend: random() > .5 });
+        links.push({ a: i, b: n.j, phase: random(), pulse: random() < .68, bend: random() > .24 });
       }
     }
   }
@@ -651,28 +651,28 @@ function initHeroAmbient() {
     const neutral = dark ? '225,229,223' : '55,66,61';
     const rgb = (color, alpha) => 'rgba(' + color + ',' + alpha.toFixed(4) + ')';
     const compact = width < 620;
-    const count = compact ? 18 : nodes.length;
+    const count = nodes.length;
     const t = elapsed / 1000;
     const rtl = root.dir === 'rtl';
     const field = nodes.slice(0, count).map(n => {
       const baseX = (rtl ? 1 - n.x : n.x) * width;
       const baseY = n.y * height;
       const dx = (pointerX * width - baseX), dy = (pointerY * height - baseY);
-      const influence = Math.max(0, 1 - Math.hypot(dx, dy) / 210) * pointerStrength;
+      const influence = Math.max(0, 1 - Math.hypot(dx, dy) / 250) * pointerStrength;
       return {
-        x: baseX + Math.sin(t * n.speed + n.phase) * 15 * n.depth + dx * influence * .075,
-        y: baseY + Math.cos(t * n.speed * .8 + n.phase) * 11 * n.depth + dy * influence * .075,
+        x: baseX + Math.sin(t * n.speed + n.phase) * 11 * n.depth + dx * influence * .12,
+        y: baseY + Math.cos(t * n.speed * .8 + n.phase) * 8 * n.depth + dy * influence * .12,
         influence, n
       };
     });
     // Fine network connections and moving signal packets along their paths.
-    ctx.lineWidth = .75;
+    ctx.lineWidth = compact ? .9 : 1.15;
     for (const link of links) {
       if (link.a >= count || link.b >= count) continue;
       const a = field[link.a], b = field[link.b];
       const pulse = (Math.sin(t * .8 + link.phase * 6.28) + 1) * .5;
       const strength = Math.max(a.influence, b.influence);
-      const alpha = (dark ? .11 : .095) + pulse * .035 + strength * .10;
+      const alpha = (dark ? .23 : .19) + pulse * .06 + strength * .15;
       const mid = link.bend ? { x: a.x, y: b.y } : { x: b.x, y: a.y };
       ctx.strokeStyle = rgb(ink, alpha);
       ctx.beginPath();
@@ -682,7 +682,7 @@ function initHeroAmbient() {
       ctx.lineTo(b.x, b.y);
       ctx.stroke();
       if (link.pulse) {
-        const p = (t * .12 + link.phase) % 1;
+        const p = (t * .20 + link.phase) % 1;
         let x, y;
         if (link.bend) {
           const first = Math.abs(mid.y - a.y);
@@ -691,19 +691,19 @@ function initHeroAmbient() {
           if (dist < first) { x = a.x; y = a.y + (mid.y - a.y) * dist / (first || 1); }
           else { x = mid.x + (b.x - mid.x) * (dist - first) / (total - first || 1); y = b.y; }
         } else { x = a.x + (b.x - a.x) * p; y = a.y + (b.y - a.y) * p; }
-        ctx.fillStyle = rgb(ink, (dark ? .28 : .23) * Math.sin(Math.PI * p));
-        ctx.beginPath(); ctx.arc(x, y, 1.8, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = rgb(ink, (dark ? .64 : .55) * Math.sin(Math.PI * p));
+        ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI * 2); ctx.fill();
       }
     }
     // Drifting junctions, small rings and restrained cursor interaction.
     for (let i = 0; i < field.length; i++) {
       const { x, y, n, influence } = field[i];
       const breathing = .5 + .5 * Math.sin(t * .9 + n.phase);
-      ctx.fillStyle = rgb(neutral, .12 + breathing * .12 + influence * .12);
+      ctx.fillStyle = rgb(neutral, .22 + breathing * .18 + influence * .17);
       ctx.beginPath(); ctx.arc(x, y, n.radius, 0, Math.PI * 2); ctx.fill();
       if (i % 4 === 0) {
-        ctx.strokeStyle = rgb(ink, .07 + breathing * .06 + influence * .09);
-        ctx.beginPath(); ctx.arc(x, y, 5 + breathing * 4, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = rgb(ink, .12 + breathing * .12 + influence * .12);
+        ctx.beginPath(); ctx.arc(x, y, 6 + breathing * 5, 0, Math.PI * 2); ctx.stroke();
       }
     }
     // Fade the field at its edges and behind the text, without overlaying the content.
@@ -711,14 +711,14 @@ function initHeroAmbient() {
     ctx.globalCompositeOperation = 'destination-in';
     const vertical = ctx.createLinearGradient(0, 0, 0, height);
     vertical.addColorStop(0, 'rgba(0,0,0,0)');
-    vertical.addColorStop(.12, 'rgba(0,0,0,1)');
-    vertical.addColorStop(.83, 'rgba(0,0,0,1)');
+    vertical.addColorStop(.06, 'rgba(0,0,0,1)');
+    vertical.addColorStop(.94, 'rgba(0,0,0,1)');
     vertical.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = vertical; ctx.fillRect(0, 0, width, height);
     const horizontal = ctx.createLinearGradient(0, 0, width, 0);
     horizontal.addColorStop(0, 'rgba(0,0,0,.22)');
-    horizontal.addColorStop(.08, 'rgba(0,0,0,.84)');
-    horizontal.addColorStop(.92, 'rgba(0,0,0,.84)');
+    horizontal.addColorStop(.08, 'rgba(0,0,0,1)');
+    horizontal.addColorStop(.92, 'rgba(0,0,0,1)');
     horizontal.addColorStop(1, 'rgba(0,0,0,.22)');
     ctx.fillStyle = horizontal; ctx.fillRect(0, 0, width, height);
     ctx.restore();
