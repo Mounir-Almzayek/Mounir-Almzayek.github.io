@@ -57,24 +57,7 @@ function initPortraitMotion() {
   update();
   toggle.addEventListener('click', () => { enabled = !enabled; update(); });
   reduced.addEventListener('change', update);
-  if (window.matchMedia('(pointer: fine)').matches) {
-    let frame = 0;
-    stage.addEventListener('pointermove', event => {
-      if (stage.dataset.motion !== 'running') return;
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        if (stage.dataset.motion !== 'running') return;
-        const bounds = stage.getBoundingClientRect();
-        stage.style.setProperty('--pointer-x', ((event.clientX - bounds.left) / bounds.width - .5) * 7 + 'px');
-        stage.style.setProperty('--pointer-y', ((event.clientY - bounds.top) / bounds.height - .5) * 7 + 'px');
-      });
-    }, { passive: true });
-    stage.addEventListener('pointerleave', () => {
-      cancelAnimationFrame(frame);
-      stage.style.removeProperty('--pointer-x');
-      stage.style.removeProperty('--pointer-y');
-    });
-  }
+
 }
 
 initTheme();
