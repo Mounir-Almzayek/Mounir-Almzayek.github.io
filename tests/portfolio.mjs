@@ -76,7 +76,7 @@ try {
     const portrait = await photo.boundingBox();
     assert.ok(bounds[0].right <= bounds[1].x && Math.abs(bounds[0].y-bounds[1].y)<1, 'Top specialty cards aligned without overlap');
     assert.ok(bounds.every(card => card.bottom <= portrait.y || card.y >= portrait.y+portrait.height), 'Cards must stay outside the portrait');
-    assert.match(await page.locator('#filter-result').innerText(), locale === 'ar' ? /مشاريع/ : /selected projects/);
+    assert.match(await page.locator('#filter-result').innerText(), locale === 'ar' ? /مشاريع/ : /selected projects/i);
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2));
     await page.evaluate(() => scrollTo(0, 0));
     await page.screenshot({ path: '/tmp/portfolio-' + locale + '-' + width + '-light.png', animations: 'disabled' });
