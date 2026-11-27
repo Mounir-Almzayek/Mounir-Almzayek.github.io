@@ -409,3 +409,27 @@ html[lang=ar] .specialty-item strong,html[lang=ar] .specialty-item small { lette
   .nav-ready .nav-primary .nav-contact { margin-top:4px }
 }
 @media print { .top { display:none!important } }
+
+/* Career and credentials: shared bilingual layout. */
+.job-meta { display:flex;flex-direction:column;align-items:flex-start;gap:7px;color:var(--muted);font-size:12px }
+.job-meta time { padding-top:2px;line-height:1.5 }
+.job .role-type { border:1px solid var(--line);padding:3px 7px;border-radius:3px;font-size:11px }
+.job .org { margin-top:5px }
+.role-details { margin:12px 0 0;padding-inline-start:18px;color:var(--muted);max-width:780px;font-size:15px }
+.role-details li { padding-inline-start:3px;margin:5px 0;line-height:1.65 }
+.credential-grid,.community-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px }
+.credential-card,.community-card { min-width:0;padding:20px;background:var(--panel);border:1px solid var(--line);border-radius:4px;display:flex;flex-direction:column;gap:10px }
+.credential-meta { display:flex;flex-wrap:wrap;justify-content:space-between;gap:5px 12px;color:var(--muted);font:12px/1.5 var(--mono) }
+.credential-card h3,.community-card h3 { font-size:17px;line-height:1.5;letter-spacing:0;margin:0;overflow-wrap:anywhere }
+.credential-code { margin-top:auto;padding-top:10px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between }
+.credential-code code { font-size:11px;color:var(--ink);direction:ltr;unicode-bidi:isolate }
+.community-card p { font-size:14px;line-height:1.7;color:var(--muted);margin:0 }
+.community-note { margin-top:16px;display:flex;align-items:baseline;flex-wrap:wrap;gap:8px 18px;padding:16px 20px;border:1px solid var(--line);background:var(--panel);font-size:14px }
+.community-note strong { font-weight:600 }
+.community-note>span:last-child { color:var(--muted) }
+#certifications .actions { margin-top:16px }
+.app-shot .store-gallery { align-items:center;gap:8px }
+.app-shot .store-gallery img { height:clamp(150px,21vw,300px);object-fit:contain;background:transparent }
+@media(max-width:620px) { .credential-grid,.community-grid { grid-template-columns:1fr } .job-meta { flex-direction:row;flex-wrap:wrap;gap:6px 12px;align-items:center } .credential-card,.community-card { padding:16px } }
+@media(max-width:560px) { .app-shot .store-gallery img { height:clamp(145px,50vw,250px) } }
+@media print { .credential-card,.community-card,.community-note { break-inside:avoid } }

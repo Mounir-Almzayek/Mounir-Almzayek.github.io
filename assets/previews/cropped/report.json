@@ -1,0 +1,227 @@
+[
+  {
+    "gallery": "zaker",
+    "source": "assets/previews/sources/zaker-1.png",
+    "output": "assets/previews/cropped/zaker-1.webp",
+    "original": [
+      602,
+      1280
+    ],
+    "result": [
+      602,
+      1280
+    ],
+    "trim_top": 0,
+    "trim_bottom": 0
+  },
+  {
+    "gallery": "zaker",
+    "source": "assets/previews/sources/zaker-2.png",
+    "output": "assets/previews/cropped/zaker-2.webp",
+    "original": [
+      606,
+      1280
+    ],
+    "result": [
+      606,
+      1280
+    ],
+    "trim_top": 0,
+    "trim_bottom": 0
+  },
+  {
+    "gallery": "zaker",
+    "source": "assets/previews/sources/zaker-3.png",
+    "output": "assets/previews/cropped/zaker-3.webp",
+    "original": [
+      606,
+      1280
+    ],
+    "result": [
+      606,
+      1280
+    ],
+    "trim_top": 0,
+    "trim_bottom": 0
+  },
+  {
+    "gallery": "saudi-cup",
+    "source": "assets/previews/saudi-cup-1.jpg",
+    "output": "assets/previews/cropped/saudi-cup-1.webp",
+    "original": [
+      498,
+      970
+    ],
+    "result": [
+      498,
+      970
+    ],
+    "trim_top": 0,
+    "trim_bottom": 0
+  },
+  {
+    "gallery": "saudi-cup",
+    "source": "assets/previews/saudi-cup-2.jpg",
+    "output": "assets/previews/cropped/saudi-cup-2.webp",
+    "original": [
+      498,
+      980
+    ],
+    "result": [
+      498,
+      980
+    ],
+    "trim_top": 0,
+    "trim_bottom": 0
+  },
+  {
+    "gallery": "saudi-cup",
+    "source": "assets/previews/saudi-cup-3.jpg",
+    "output": "assets/previews/cropped/saudi-cup-3.webp",
+    "original": [
+      498,
+      971
+    ],
+    "result": [
+      498,
+      971
+    ],
+    "trim_top": 0,
+    "trim_bottom": 0
+  },
+  {
+    "gallery": "bin-taleb",
+    "source": "assets/previews/sources/bin-taleb-official-1.jpg",
+    "output": "assets/previews/cropped/bin-taleb-1.webp",
+    "original": [
+      597,
+      1280
+    ],
+    "result": [
+      597,
+      1257
+    ],
+    "trim_top": 0,
+    "trim_bottom": 23
+  },
+  {
+    "gallery": "bin-taleb",
+    "source": "assets/previews/sources/bin-taleb-official-2.jpg",
+    "output": "assets/previews/cropped/bin-taleb-2.webp",
+    "original": [
+      597,
+      1280
+    ],
+    "result": [
+      597,
+      1257
+    ],
+    "trim_top": 0,
+    "trim_bottom": 23
+  },
+  {
+    "gallery": "bin-taleb",
+    "source": "assets/previews/sources/bin-taleb-official-3.jpg",
+    "output": "assets/previews/cropped/bin-taleb-3.webp",
+    "original": [
+      597,
+      1280
+    ],
+    "result": [
+      597,
+      1257
+    ],
+    "trim_top": 0,
+    "trim_bottom": 23
+  },
+  {
+    "gallery": "swimmer",
+    "source": "assets/previews/swimmer-1.png",
+    "output": "assets/previews/cropped/swimmer-1.webp",
+    "original": [
+      591,
+      1280
+    ],
+    "result": [
+      591,
+      1170
+    ],
+    "trim_top": 62,
+    "trim_bottom": 48
+  },
+  {
+    "gallery": "swimmer",
+    "source": "assets/previews/swimmer-2.png",
+    "output": "assets/previews/cropped/swimmer-2.webp",
+    "original": [
+      591,
+      1280
+    ],
+    "result": [
+      591,
+      1170
+    ],
+    "trim_top": 62,
+    "trim_bottom": 48
+  },
+  {
+    "gallery": "swimmer",
+    "source": "assets/previews/swimmer-3.png",
+    "output": "assets/previews/cropped/swimmer-3.webp",
+    "original": [
+      591,
+      1280
+    ],
+    "result": [
+      591,
+      1170
+    ],
+    "trim_top": 62,
+    "trim_bottom": 48
+  },
+  {
+    "gallery": "swimmer-craftsman",
+    "source": "assets/previews/sources/swimmer-craftsman-1.png",
+    "output": "assets/previews/cropped/swimmer-craftsman-1.webp",
+    "original": [
+      591,
+      1280
+    ],
+    "result": [
+      591,
+      1170
+    ],
+    "trim_top": 62,
+    "trim_bottom": 48
+  },
+  {
+    "gallery": "swimmer-craftsman",
+    "source": "assets/previews/sources/swimmer-craftsman-2.png",
+    "output": "assets/previews/cropped/swimmer-craftsman-2.webp",
+    "original": [
+      591,
+      1280
+    ],
+    "result": [
+      591,
+      1170
+    ],
+    "trim_top": 62,
+    "trim_bottom": 48
+  },
+  {
+    "gallery": "swimmer-craftsman",
+    "source": "assets/previews/sources/swimmer-craftsman-3.png",
+    "output": "assets/previews/cropped/swimmer-craftsman-3.webp",
+    "original": [
+      591,
+      1280
+    ],
+    "result": [
+      591,
+      1170
+    ],
+    "trim_top": 62,
+    "trim_bottom": 48
+  }
+]
