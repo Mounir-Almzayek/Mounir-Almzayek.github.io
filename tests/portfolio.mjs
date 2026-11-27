@@ -217,12 +217,12 @@ try {
   for (const locale of ['en', 'ar']) {
     const motion = await browser.newPage({ viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference' });
     await motion.goto(origin + (locale === 'ar' ? '/ar/' : '/'), { waitUntil: 'domcontentloaded' });
-    const ambient = motion.locator('.hero-ambient');
+    const ambient = motion.locator('.page-grid');
     assert.equal(await ambient.getAttribute('aria-hidden'), 'true');
     assert.equal(await ambient.evaluate(node => getComputedStyle(node).pointerEvents), 'none');
-    await motion.waitForFunction(() => document.querySelector('.hero-ambient')?.dataset.ambientState === 'running');
+    await motion.waitForFunction(() => document.querySelector('.page-grid')?.dataset.ambientState === 'running');
     const bitmap = await ambient.evaluate(node => node.toDataURL());
-    await motion.waitForFunction(previous => document.querySelector('.hero-ambient').toDataURL() !== previous, bitmap);
+    await motion.waitForFunction(previous => document.querySelector('.page-grid').toDataURL() !== previous, bitmap);
     const role = motion.locator('.hero-role');
     await motion.waitForFunction(() => {
       const overlay = document.querySelector('.hero-role [data-typing-overlay]');
@@ -243,7 +243,15 @@ try {
       return !node.hasAttribute('data-motion-pending') && node.getAnimations().some(animation => animation.id === 'portfolio-motion-reveal');
     });
     await motion.waitForFunction(() => getComputedStyle(document.querySelector('#certifications .credential-card')).opacity === '1');
-    await motion.waitForFunction(() => document.querySelector('.hero-ambient')?.dataset.ambientState === 'paused');
+    await motion.waitForFunction(() => document.querySelector('.page-grid')?.dataset.ambientState === 'running');
+    assert.equal(await ambient.evaluate(node => getComputedStyle(node).position), 'fixed');
+    assert.equal(await ambient.evaluate(node => node.getBoundingClientRect().top), 0);
+    const lowerBitmap = await ambient.evaluate(node => node.toDataURL());
+    await motion.mouse.move(320, 520);
+    await motion.waitForFunction(previous => document.querySelector('.page-grid').toDataURL() !== previous, lowerBitmap);
+    await motion.emulateMedia({ reducedMotion: 'reduce' });
+    await motion.waitForFunction(() => document.querySelector('.page-grid')?.dataset.ambientState === 'paused');
+    assert.equal(await ambient.isVisible(), false);
     await motion.close();
   }
   // Real snapshot transitions: verify both radial directions and exact button origin.
@@ -282,7 +290,7 @@ try {
   await page.locator('#theme-toggle').click();
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
   assert.equal(await page.locator('html').getAttribute('data-theme-transition'), null);
-  await page.waitForFunction(() => document.querySelector('.hero-ambient')?.dataset.ambientState === 'paused');
+  await page.waitForFunction(() => document.querySelector('.page-grid')?.dataset.ambientState === 'paused');
   await page.locator('.profile-photo').hover();
   assert.equal(await page.locator('.profile-photo').evaluate(node => node.style.transform), '', 'Reduced motion disables pointer depth');
   assert.equal(await page.locator('meta[property="og:image"]').count(), 1);
