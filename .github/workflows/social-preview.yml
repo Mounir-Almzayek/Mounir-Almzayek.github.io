@@ -35,7 +35,7 @@ jobs:
           page.on('pageerror',e=>errors.push(e.message));
           await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
           await page.evaluate(()=>{document.documentElement.dataset.theme='light';});
-          await page.addStyleTag({content:'.wrap{max-width:1200px;padding-left:48px;padding-right:48px}.top nav{min-height:58px}.hero{padding:23px 0 20px;gap:35px;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr)}.hero h1{font-size:74px;margin:15px 0 12px}.hero-role{font-size:19px;margin:12px 0 5px}.hero .lede{font-size:17px;max-width:490px}.hero .actions{margin-top:20px}.hero-social{margin-top:17px}.profile-stage{max-width:392px;padding:8px}.profile-stage .profile-panel{padding:11px}.specialty-item{padding:9px 5px;gap:5px}.specialty-icon{width:17px;height:17px}.specialty-item strong{font-size:9px}.specialty-item small{font-size:8px}.profile-stage .profile-footer{padding-top:8px}.track{margin:0 0 24px}.track>div{padding:10px 16px}.track strong{font-size:15px}.track span{font-size:10px}.navlinks .theme-toggle{display:none}.motion-toggle{display:none!important}'});
+          await page.addStyleTag({content:'.wrap{max-width:1200px;padding-left:48px;padding-right:48px}.top nav{min-height:58px}.hero{padding:23px 0 20px;gap:35px;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr)}.hero h1{font-size:74px;margin:15px 0 12px}.hero-role{font-size:19px;margin:12px 0 5px}.hero .lede{font-size:17px;max-width:490px}.hero .actions{margin-top:20px}.hero-social{margin-top:17px}.profile-stage{max-width:400px;padding:34px 15px}.profile-stage .profile-panel{padding:11px}.specialty-item{padding:5px 7px;gap:5px}.specialty-icon{width:17px;height:17px}.specialty-item strong{font-size:9px}.specialty-item small{font-size:8px}.profile-stage .profile-footer{padding-top:8px}.track{margin:0 0 24px}.track>div{padding:10px 16px}.track strong{font-size:15px}.track span{font-size:10px}.navlinks .theme-toggle{display:none}.motion-toggle{display:none!important}'});
           await page.locator('.profile-photo').evaluate(i=>i.decode());
           await page.evaluate(()=>document.fonts.ready);
           await page.locator('.hero').waitFor();
@@ -49,25 +49,7 @@ jobs:
           const bytes=fs.readFileSync(path);
           const d=await page.evaluate(async src=>{const img=new Image();img.src=src;await img.decode();return [img.naturalWidth,img.naturalHeight]},'data:image/jpeg;base64,'+bytes.toString('base64'));
           if(d[0]!==1200||d[1]!==630)throw Error('Wrong preview dimensions');
-          let html=fs.readFileSync('index.html','utf8');
-          html=html.replace(/<meta\s+(?:property|name)="(?:og:(?:image[^"]*|url|site_name)|twitter:[^"]+)"[^>]*>\s*/g,'');
           const url='https://mounir-almzayek.github.io/assets/social/portfolio-preview.jpg';
-          const tags=[
-            '<meta property="og:url" content="https://mounir-almzayek.github.io/">',
-            '<meta property="og:site_name" content="Mounir Almzayek — Engineering Portfolio">',
-            '<meta property="og:image" content="'+url+'">',
-            '<meta property="og:image:secure_url" content="'+url+'">',
-            '<meta property="og:image:type" content="image/jpeg">',
-            '<meta property="og:image:width" content="1200">',
-            '<meta property="og:image:height" content="630">',
-            '<meta property="og:image:alt" content="Portfolio homepage with Mounir Almzayek’s portrait, engineering specialties and website design.">',
-            '<meta name="twitter:card" content="summary_large_image">',
-            '<meta name="twitter:title" content="Mounir Almzayek — Engineering Portfolio">',
-            '<meta name="twitter:description" content="AI systems, mobile products and backend engineering.">',
-            '<meta name="twitter:image" content="'+url+'">'
-          ].join('\n');
-          html=html.replace('</head>',tags+'\n</head>');
-          fs.writeFileSync('index.html',html);
           console.log(JSON.stringify({path,dimensions:d,bytes:bytes.length,hero,portrait,name}));
           await page.reload({waitUntil:'domcontentloaded'});
           if(await page.locator('meta[property="og:image"]').count()!==1||await page.locator('meta[property="og:image"]').getAttribute('content')!==url)throw Error('Open Graph metadata missing');
@@ -82,7 +64,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html assets/social/portfolio-preview.jpg
+          git add assets/social/portfolio-preview.jpg
           if ! git diff --cached --quiet; then
             git commit -m "Add actual portfolio homepage Open Graph preview"
             git push origin HEAD:main

@@ -1,0 +1,27 @@
+import {readFile,writeFile,mkdir} from 'node:fs/promises';
+const data=JSON.parse(await readFile('i18n/ar.json','utf8'));
+const source=await readFile('index.html','utf8');
+const keep=new Set(data.keep);
+const missing=new Set();
+let html=source.replace('<html lang="en">','<html lang="ar" dir="rtl">');
+html=html.replace('<title>Mounir Louay Almzayek — AI & Software Engineer</title>','<title>منير لؤي المزيك — مهندس ذكاء اصطناعي وبرمجيات</title>');
+html=html.replace('content="Mounir Louay Almzayek builds applied AI systems, offline-first Flutter products and reliable backend platforms. Explore engineering case studies and public code."','content="منير لؤي المزيك، مهندس ذكاء اصطناعي وبرمجيات. أنظمة AI وتطبيقات Flutter وبنى Backend، ومشاريع هندسية وسير ذاتية."');
+html=html.replace('rel="canonical" href="https://mounir-almzayek.github.io/"','rel="canonical" href="https://mounir-almzayek.github.io/ar/"').replace('property="og:url" content="https://mounir-almzayek.github.io/"','property="og:url" content="https://mounir-almzayek.github.io/ar/"');
+html=html.replace('property="og:title" content="Mounir Almzayek — Engineering for the real world"','property="og:title" content="منير المزيك — معرض الأعمال الهندسية"').replace('property="og:description" content="AI systems, mobile products and backend engineering."','property="og:description" content="الذكاء الاصطناعي وتطبيقات الجوال وهندسة Backend."');
+html=html.replace('name="twitter:title" content="Mounir Almzayek — Engineering Portfolio"','name="twitter:title" content="منير المزيك — معرض الأعمال الهندسية"').replace('name="twitter:description" content="AI systems, mobile products and backend engineering."','name="twitter:description" content="الذكاء الاصطناعي وتطبيقات الجوال وهندسة Backend."');
+html=html.replace(/(src|href)="assets\//g,'$1="/assets/');
+html=html.replace(/<body>[\s\S]*?<\/body>/,body=>body.replace(/<svg\b[\s\S]*?<\/svg>|<script\b[\s\S]*?<\/script>|>([^<>]+)</g,(match,node)=>{
+  if(node===undefined)return match;
+  const key=node.trim();
+  if(!key||keep.has(key))return match;
+  if(key.startsWith('Contact: mouneeralmzayek@gmail.com'))return '>'+node.replace('Contact:','التواصل:')+'<';
+  if(data.dictionary[key]!==undefined)return '>'+node.replace(key,data.dictionary[key])+'<';
+  missing.add(key);return match;
+}));
+html=html.replace('href="/ar/" lang="ar" hreflang="ar" aria-label="عرض الموقع بالعربية">العربية','href="/" lang="en" hreflang="en" aria-label="View English version">English');
+html=html.replace(/aria-label="([^"]+)"/g,(m,key)=>data.attrs[key]?'aria-label="'+data.attrs[key]+'"':m);
+html=html.replace(/aria-label="Open ([^"]+) on Google Play"/g,'aria-label="فتح $1 على Google Play"');
+html=html.replace(/<p>(Python, PyTorch|Flutter, Dart|TypeScript, Next.js)/g,'<p class="technical-list" dir="ltr">$1');
+if(missing.size)throw new Error('Untranslated content: '+[...missing].join(' | '));
+await mkdir('ar',{recursive:true});
+await writeFile('ar/index.html',html);

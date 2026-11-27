@@ -4,7 +4,7 @@ on:
     branches: [main]
   push:
     branches: [main]
-    paths: ['index.html', 'assets/**', '.github/workflows/verify-portrait.yml', 'tests/**']
+    paths: ['index.html', 'ar/**', 'i18n/**', 'scripts/**', 'assets/**', '.github/workflows/verify-portrait.yml', 'tests/**']
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,6 +19,10 @@ jobs:
           node-version: '22'
       - run: npm install --no-save --package-lock=false playwright@1.56.1
       - run: npx playwright install chromium
+      - name: Check generated Arabic page
+        run: |
+          node scripts/generate-ar.mjs
+          git diff --exit-code -- ar/index.html
       - name: Validate portfolio
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/portfolio-http.log 2>&1 &
