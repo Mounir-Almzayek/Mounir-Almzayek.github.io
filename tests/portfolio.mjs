@@ -46,15 +46,30 @@ try {
     assert.ok(await page.locator('.project:not([hidden])').count() > 0);
     await page.locator('[data-filter="all"]').click();
     assert.equal(await page.locator('.project:not([hidden])').count(), 18);
-    const pulse = page.locator('.orbit-pulse').first();
-    assert.equal(await pulse.evaluate(p => getComputedStyle(p).animationName), 'portrait-signal-flow');
-    const before = await pulse.evaluate(p => getComputedStyle(p).strokeDashoffset);
-    await page.waitForTimeout(300);
-    assert.notEqual(await pulse.evaluate(p => getComputedStyle(p).strokeDashoffset), before);
+    const signal = page.locator('.signal-runner');
+    const strip = page.locator('.specialty-grid');
+    assert.equal(await strip.locator('.specialty-item').count(), 3);
+    assert.equal(await page.locator('.profile-orbit, .orbit-label, .portrait-halo').count(), 0);
+    assert.equal(await signal.evaluate(node => getComputedStyle(node).animationName), 'engineering-signal');
+    const initial = await signal.evaluate(node => getComputedStyle(node).transform);
+    await page.waitForTimeout(400);
+    assert.notEqual(await signal.evaluate(node => getComputedStyle(node).transform), initial);
     await page.locator('.motion-toggle').click();
-    assert.equal(await pulse.evaluate(p => getComputedStyle(p).animationPlayState), 'paused');
+    assert.equal(await signal.evaluate(node => getComputedStyle(node).animationPlayState), 'paused');
     await page.locator('.motion-toggle').click();
-    assert.equal(await pulse.evaluate(p => getComputedStyle(p).animationPlayState), 'running');
+    assert.equal(await signal.evaluate(node => getComputedStyle(node).animationPlayState), 'running');
+    await photo.scrollIntoViewIfNeeded();
+    const documentBounds = () => photo.evaluate(node => {
+      const b = node.getBoundingClientRect();
+      return [b.x + scrollX, b.y + scrollY, b.width, b.height];
+    });
+    const photoBefore = await documentBounds();
+    await photo.hover();
+    await page.waitForTimeout(400);
+    const photoAfter = await documentBounds();
+    assert.ok(photoAfter.every((value, i) => Math.abs(value - photoBefore[i]) < 1), 'Portrait remains fixed in document coordinates');
+    const itemBounds = await strip.locator('.specialty-item').evaluateAll(nodes => nodes.map(node => ({x:node.offsetLeft, y:node.offsetTop, width:node.offsetWidth, height:node.offsetHeight, overflow:node.scrollWidth>node.clientWidth+1})));
+    assert.ok(itemBounds.every(node => !node.overflow && node.y === itemBounds[0].y && Math.abs(node.width-itemBounds[0].width)<=1));
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2));
     await page.evaluate(() => scrollTo(0, 0));
     await page.screenshot({ path: '/tmp/portfolio-' + width + '-light.png', animations: 'disabled' });
@@ -67,8 +82,8 @@ try {
   }
   const page = await browser.newPage({ reducedMotion: 'reduce' });
   await page.goto(origin, { waitUntil: 'domcontentloaded' });
-  assert.equal(await page.locator('.orbit-pulse').first().evaluate(p => getComputedStyle(p).animationName), 'none');
-  assert.equal(await page.locator('.portrait-halo').evaluate(p => getComputedStyle(p).animationName), 'none');
+  assert.equal(await page.locator('.signal-runner').evaluate(p => getComputedStyle(p).animationName), 'none');
+  assert.equal(await page.locator('.motion-toggle').isVisible(), false);
   assert.equal(await page.locator('meta[property="og:image"]').count(), 1);
   const url = await page.locator('meta[property="og:image"]').getAttribute('content');
   const image = await page.evaluate(async path => {
