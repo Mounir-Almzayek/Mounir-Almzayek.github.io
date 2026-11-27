@@ -97,7 +97,7 @@ document.getElementById('print')?.addEventListener('click', () => window.print()
 
 // Native motion choreography: all content and resting styles remain unchanged.
 function initPortfolioMotion() {
-  if (!Element.prototype.animate || !window.IntersectionObserver) return;
+  if (!Element.prototype.animate || !window.requestAnimationFrame) return;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const active = new Set();
   const seen = new WeakSet();
@@ -109,8 +109,11 @@ function initPortfolioMotion() {
     '.track > div, .sectionhead, .group-heading, .project, .job, .principle, .stack > div, .credential-card, .community-card, .cv-item, .contact h2, .contact .actions'
   )];
   let introPlayed = false;
-  let observer;
   let printing = false;
+  let scrollFrame = 0;
+  let layoutObserver;
+  const pending = new Map();
+  const typing = new Map();
 
   function play(node, frames, options, kind = 'reveal') {
     if (!node || reduced.matches || document.hidden || printing) return;
@@ -123,10 +126,133 @@ function initPortfolioMotion() {
     return animation;
   }
 
+  function releasePending(node) {
+    if (!pending.has(node)) return;
+    node.style.opacity = pending.get(node);
+    pending.delete(node);
+    delete node.dataset.motionPending;
+  }
+
   function stop() {
-    observer?.disconnect();
+    if (scrollFrame) cancelAnimationFrame(scrollFrame);
+    scrollFrame = 0;
+    layoutObserver?.disconnect();
+    for (const node of [...pending.keys()]) releasePending(node);
+    for (const finish of [...typing.values()]) finish();
     for (const animation of active) animation.cancel();
     active.clear();
+  }
+
+  // Keep the original sentence and its geometry; the aria-hidden overlay types
+  // grapheme clusters, including Arabic combining marks, without changing layout.
+  function typeText(node, { delay = 0, duration = 1000 } = {}) {
+    if (!node || reduced.matches || printing || document.hidden || typing.has(node) ||
+        node.childElementCount || !node.textContent.trim()) return;
+    const original = node.textContent;
+    const locale = document.documentElement.lang || 'en';
+    const units = typeof Intl.Segmenter === 'function'
+      ? Array.from(new Intl.Segmenter(locale, { granularity: 'grapheme' }).segment(original), part => part.segment)
+      : Array.from(original);
+    const position = node.style.position;
+    const reserve = document.createElement('span');
+    reserve.style.opacity = '0';
+    const overlay = document.createElement('span');
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.dataset.typingOverlay = '';
+    Object.assign(overlay.style, {
+      position: 'absolute', inset: '0', pointerEvents: 'none', userSelect: 'none'
+    });
+    const written = document.createTextNode('');
+    const caret = document.createElement('span');
+    caret.setAttribute('aria-hidden', 'true');
+    Object.assign(caret.style, {
+      display: 'inline-block', width: '0', height: '.85em',
+      borderInlineStart: '2px solid currentColor', verticalAlign: '-.06em',
+      marginInlineStart: '3px'
+    });
+    overlay.append(written, caret);
+    if (getComputedStyle(node).position === 'static') node.style.position = 'relative';
+    // Keep the original Text nodes, rather than replacing the permanent content.
+    while (node.firstChild) reserve.appendChild(node.firstChild);
+     node.append(reserve, overlay);
+    node.dataset.motionTyping = '';
+    let frame = 0;
+    let started = null;
+    let lastCount = -1;
+    const finish = () => {
+      if (frame) cancelAnimationFrame(frame);
+      blink.cancel();
+      overlay.remove();
+      while (reserve.firstChild) node.insertBefore(reserve.firstChild, reserve);
+      reserve.remove();
+      node.style.position = position;
+      delete node.dataset.motionTyping;
+      typing.delete(node);
+    };
+    const blink = caret.animate([{ opacity: 1 }, { opacity: 0, offset: .55 }, { opacity: 1 }],
+      { duration: 720, iterations: Infinity, easing: 'steps(1, end)' });
+    typing.set(node, finish);
+    function tick(now) {
+      if (started === null) started = now;
+      const elapsed = now - started - delay;
+      if (elapsed >= duration + 400) { finish(); return; }
+      const count = Math.max(0, Math.min(units.length, Math.floor(Math.max(0, elapsed) / duration * units.length)));
+      if (count !== lastCount) {
+        written.data = units.slice(0, count).join('');
+        lastCount = count;
+      }
+      frame = requestAnimationFrame(tick);
+    }
+    frame = requestAnimationFrame(tick);
+  }
+
+  // Pre-stage elements below the trigger so they cannot flash into view first.
+  // Use pixels derived from viewport HEIGHT: percentage IO margins use width.
+  // A scroll/resize batch reads geometry first and only then applies animation.
+  function scan() {
+    scrollFrame = 0;
+    if (reduced.matches || printing || document.hidden) return;
+    const height = window.innerHeight;
+    const line = height * .75;
+    const atBottom = window.scrollY + height >= document.documentElement.scrollHeight - 4;
+    const ready = [];
+    const waiting = [];
+    for (const node of targets) {
+      if (seen.has(node) || node.closest('[hidden]')) continue;
+      const rect = node.getBoundingClientRect();
+      if (rect.bottom <= 0 || node.contains(document.activeElement)) {
+        releasePending(node);
+        seen.add(node);
+      } else if (rect.top <= line || (atBottom && rect.top < height)) {
+        ready.push({ node, rect });
+      } else if (!pending.has(node)) {
+        waiting.push(node);
+      }
+    }
+    for (const node of waiting) {
+      pending.set(node, node.style.opacity);
+      node.style.opacity = '0';
+      node.dataset.motionPending = '';
+    }
+    ready.sort((a, b) => a.rect.top - b.rect.top || -inline * (a.rect.left - b.rect.left));
+    ready.forEach(({ node }, i) => {
+      releasePending(node);
+      const heading = node.matches('.sectionhead, .group-heading');
+      const job = node.matches('.job');
+      const delay = Math.min(i, 3) * 95;
+      enter(node, {
+        delay, x: heading || job ? inline * 20 : 0,
+        y: heading ? 26 : 40, duration: heading ? 850 : 1050, opacity: 0
+      });
+      if (node.matches('.sectionhead')) {
+        const title = node.querySelector('h2');
+        typeText(title, { delay: delay + 180, duration: Math.min(1200, Math.max(430, (title?.textContent.length || 0) * 28)) });
+      }
+    });
+  }
+
+  function scheduleScan() {
+    if (!scrollFrame && !reduced.matches && !printing && !document.hidden) scrollFrame = requestAnimationFrame(scan);
   }
 
   function cancelFor(node, kinds) {
@@ -155,10 +281,15 @@ function initPortfolioMotion() {
       if (hero && hero.getBoundingClientRect().bottom > 0 && scrollY < 120) {
         // Arabic shaping remains intact; animate whole lines, never individual glyphs.
         const copy = hero.querySelector('.hero-copy');
-        [...(copy?.children || [])].forEach((node, i) => enter(node, {
-          delay: i * 115, x: i === 1 ? inline * 25 : 0, y: i === 1 ? 42 : 26,
-          duration: i === 1 ? 1250 : 920, opacity: i === 1 ? .18 : .22
-        }));
+        [...(copy?.children || [])].forEach((node, i) => {
+          if (node.matches('.hero-role, .lede')) return;
+          enter(node, {
+            delay: i * 115, x: i === 1 ? inline * 25 : 0, y: i === 1 ? 42 : 26,
+            duration: i === 1 ? 1250 : 920, opacity: i === 1 ? .18 : .22
+          });
+        });
+        typeText(copy?.querySelector('.hero-role'), { delay: 400, duration: 800 });
+        typeText(copy?.querySelector('.lede'), { delay: 1300, duration: 2100 });
         if (stage?.dataset.motion === 'running') {
           enter(stage, { delay: 160, y: 35, duration: 1120, opacity: .28 });
           const portrait = stage.querySelector('.profile-photo');
@@ -173,23 +304,12 @@ function initPortfolioMotion() {
         }
       }
     }
-    observer?.disconnect();
-    observer = new IntersectionObserver(entries => {
-      const visible = entries.filter(entry => entry.isIntersecting && !entry.target.closest('[hidden]'));
-      visible.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top ||
-        -inline * (a.boundingClientRect.left - b.boundingClientRect.left));
-      visible.forEach((entry, i) => {
-        observer.unobserve(entry.target);
-        const node = entry.target;
-        const heading = node.matches('.sectionhead, .group-heading');
-        const job = node.matches('.job');
-        enter(node, {
-          delay: Math.min(i, 4) * 100, x: heading || job ? inline * 20 : 0,
-          y: heading ? 25 : 38, duration: heading ? 880 : 1050, opacity: .18
-        });
-      });
-    }, { threshold: 0, rootMargin: '0px 0px -12% 0px' });
-    targets.forEach(node => { if (!seen.has(node)) observer.observe(node); });
+    scan();
+    if (typeof ResizeObserver === 'function') {
+      layoutObserver ||= new ResizeObserver(scheduleScan);
+      const main = document.querySelector('main');
+      if (main) layoutObserver.observe(main);
+    }
   }
 
   // Lightweight tactile feedback for real interactions, including touch.
@@ -206,6 +326,7 @@ function initPortfolioMotion() {
   for (const button of document.querySelectorAll('[data-filter]')) {
     button.addEventListener('click', () => {
       if (reduced.matches) return;
+      scheduleScan();
       const visible = [...document.querySelectorAll('.project:not([hidden])')].filter(card => {
         const bounds = card.getBoundingClientRect();
         return bounds.bottom > 0 && bounds.top < innerHeight;
@@ -221,6 +342,10 @@ function initPortfolioMotion() {
 
   // Preserve usability during rapid keyboard navigation, printing and preference changes.
   document.addEventListener('focusin', event => {
+    for (const node of [...pending.keys()]) {
+      if (node.contains(event.target)) { releasePending(node); seen.add(node); }
+    }
+    for (const [node, finish] of typing) if (node.contains(event.target)) finish();
     for (const animation of active) {
       const node = animation.effect?.target;
       if (node?.contains(event.target)) animation.cancel();
@@ -233,6 +358,9 @@ function initPortfolioMotion() {
       }
     }
   });
+  window.addEventListener('scroll', scheduleScan, { passive: true });
+  window.addEventListener('resize', scheduleScan, { passive: true });
+  window.addEventListener('hashchange', scheduleScan);
   reduced.addEventListener('change', () => { if (reduced.matches) stop(); else start(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); else start(); });
   window.addEventListener('beforeprint', () => { printing = true; stop(); });
