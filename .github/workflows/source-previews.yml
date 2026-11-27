@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: '22'
       - run: npm install --no-save playwright@1.56.1
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install chromium
       - name: Resolve and capture real public sources
         run: |
           mkdir -p assets/previews/sources
@@ -40,9 +40,39 @@ jobs:
           const esc=s=>s.replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;');
           async function capture(card,index){
             const name=card.match(/<h3>(.*?)<\/h3>/)?.[1]||'Project';
+            if(name==='Swimmer Craftsman'){
+              const urls=[...card.matchAll(/src="(https:\/\/play-lh\.googleusercontent\.com\/[^"]+)"/g)].map(m=>m[1]);
+              let updated=card;const files=[];
+              const ctx=await browser.newContext();
+              try{
+                for(const [i,url] of urls.entries()){
+                  try{
+                    const res=await ctx.request.get(url,{timeout:15000});
+                    const type=(res.headers()['content-type']||'').split(';')[0];
+                    const ext={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[type];
+                    if(!res.ok()||!ext)continue;
+                    const bytes=await res.body();if(bytes.length<2000)continue;
+                    const path='assets/previews/sources/swimmer-craftsman-'+(i+1)+'.'+ext;
+                    fs.writeFileSync(path,bytes);updated=updated.replace(url,path);files.push(path);
+                  }catch{}
+                }
+              }finally{await ctx.close();}
+              if(files.length)replacements.set(card,updated);
+              report.push({name,status:files.length?'captured':'remote originals',files});return;
+            }
             if(/<img\b/.test(card)){report.push({name,status:'existing genuine image'});return;}
             const repo=card.match(/href="(https:\/\/github\.com\/Mounir-Almzayek\/[^"]+)"/)?.[1];
             const candidates=[...(custom[name]||[]),...(repo?[repo]:[])];
+            const designTitles={'Clinic Hub':'clinic app','Sold Out / Order Application':'order app','Connect Four':'connect four'};
+            if(designTitles[name]){
+              const profile=await browser.newPage();
+              try{
+                await profile.goto('https://www.behance.net/mouneeralmzayek',{waitUntil:'domcontentloaded',timeout:18000});
+                const urls=await profile.locator('a[href*="/gallery/"]').evaluateAll(as=>as.map(a=>({href:a.href,text:(a.innerText+' '+a.getAttribute('aria-label')+' '+(a.querySelector('img')?.alt||'')).toLowerCase()})));
+                const match=urls.find(x=>x.text.includes(designTitles[name])||x.href.toLowerCase().includes(designTitles[name].replaceAll(' ','-')));
+                if(match&&new URL(match.href).hostname==='www.behance.net')candidates.unshift(match.href);
+              }catch{}finally{await profile.close();}
+            }
             if(!candidates.length){report.push({name,status:'private/no public source',preview:'conceptual'});return;}
             const page=await browser.newPage({viewport:{width:1360,height:850},deviceScaleFactor:1,reducedMotion:'reduce',locale:'en-US'});
             const errors=[];
@@ -67,7 +97,7 @@ jobs:
                   }else{
                     await page.screenshot({path,type:'jpeg',quality:84,animations:'disabled'});
                   }
-                  const label=isAsset?'Original public repository asset':repoPage?'Public source repository · not an app screenshot':url.includes('play.google.com')?'Official Google Play listing':'Official website · captured preview';
+                  const label=isAsset?'Original public repository asset':repoPage?'Public source repository · not an app screenshot':url.includes('play.google.com')?'Official Google Play listing':url.includes('behance.net')?'Original published design project · Behance':'Official website · captured preview';
                   const dest=isAsset?(repo||url):url;
                   const fig='<figure class="source-preview"><a href="'+esc(dest)+'"><img src="'+path+'" alt="'+esc(name)+' — '+esc(label)+'" loading="lazy" decoding="async"></a><span class="media-fallback">Open original source ↗</span><figcaption>'+esc(label)+'</figcaption></figure>';
                   const original=card.match(/<figure\b[^>]*>[\s\S]*?<\/figure>/)?.[0];
@@ -98,8 +128,8 @@ jobs:
             const page=await browser.newPage({viewport:{width,height:900},reducedMotion:'reduce'});
             const errors=[];page.on('pageerror',e=>errors.push(e.message));
             await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
-            if(await page.locator('.project').count()!==33)throw Error('Missing cards');
-            if(await page.locator('.project figure').count()!==33)throw Error('Missing preview');
+            if(await page.locator('.project').count()!==34)throw Error('Missing cards (34 expected)');
+            if(await page.locator('.project figure').count()!==34)throw Error('Missing preview');
             if(await page.locator('.profile-photo').evaluate(i=>getComputedStyle(i).filter)!=='none')throw Error('Portrait not in natural color');
             await page.locator('[data-filter="ai"]').click();
             await page.locator('[data-filter="all"]').click();
