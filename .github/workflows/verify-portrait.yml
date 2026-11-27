@@ -5,14 +5,14 @@ on:
     branches: [main]
     paths: ['.github/workflows/verify-portrait.yml', 'index.html']
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: verify-portfolio-portrait
   cancel-in-progress: true
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 6
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,6 +20,41 @@ jobs:
           node-version: '22'
       - run: npm install --no-save playwright@1.56.1
       - run: npx playwright install chromium
+      - name: Cache highest-resolution original profile photo
+        run: |
+          mkdir -p assets/profile
+          node --input-type=module <<'JS'
+          import { chromium } from 'playwright';
+          import fs from 'node:fs';
+          const browser=await chromium.launch();
+          const page=await browser.newPage();
+          const base='https://avatars.githubusercontent.com/u/171086291?v=4';
+          const candidates=[base,base+'&s=460',base+'&s=1024',base+'&s=2048'];
+          const results=[];let best;
+          for(const url of candidates){
+            try{
+              const res=await page.request.get(url,{timeout:20000});
+              const type=(res.headers()['content-type']||'').split(';')[0];
+              const ext={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[type];
+              if(!res.ok()||!ext)throw Error('Image HTTP '+res.status());
+              const bytes=await res.body();
+              if(bytes.length>6000000)throw Error('Image exceeds size budget');
+              const d=await page.evaluate(async src=>{const i=new Image();i.src=src;await i.decode();return {width:i.naturalWidth,height:i.naturalHeight}},'data:'+type+';base64,'+bytes.toString('base64'));
+              results.push({url,...d,bytes:bytes.length});
+              if(!best||d.width*d.height>best.width*best.height)best={url,...d,bytes,ext};
+            }catch(e){results.push({url,error:String(e)})}
+          }
+          if(!best)throw Error('No original portrait available');
+          const file='assets/profile/portrait.'+best.ext;
+          fs.writeFileSync(file,best.bytes);
+          let html=fs.readFileSync('index.html','utf8');
+          html=html.replace(/<img class="profile-photo"[^>]*>/,tag=>tag.replace(/src="[^"]*"/,'src="'+file+'"').replace(/width="\d+"/,'width="'+best.width+'"').replace(/height="\d+"/,'height="'+best.height+'"'));
+          fs.writeFileSync('index.html',html);
+          const report={source:best.url,width:best.width,height:best.height,bytes:best.bytes.length,file,candidates:results};
+          fs.writeFileSync('assets/profile/source.json',JSON.stringify(report,null,2)+'\n');
+          console.log(JSON.stringify(report,null,2));
+          await browser.close();
+          JS
       - name: Verify responsive portrait, theme and motion preferences
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/portfolio-http.log 2>&1 &
@@ -39,6 +74,8 @@ jobs:
             const pulse=page.locator('.orbit-pulse').first(), motion=page.locator('.motion-toggle');
             if(await pulse.evaluate(p=>getComputedStyle(p).animationName)!=='portrait-signal-flow')throw Error('Missing animation');
             if(await pulse.evaluate(p=>getComputedStyle(p).animationPlayState)!=='running')throw Error('Animation not running');
+            if(await page.locator('.orbit-label').count()!==3)throw Error('Missing specialty badges');
+            if(await page.locator('.portrait-halo').evaluate(p=>getComputedStyle(p).animationName)!=='halo-breathe')throw Error('Missing halo animation');
             const before=await pulse.evaluate(p=>getComputedStyle(p).strokeDashoffset);
             await page.waitForTimeout(300);
             if(before===await pulse.evaluate(p=>getComputedStyle(p).strokeDashoffset))throw Error('Animation not moving');
@@ -53,7 +90,7 @@ jobs:
             await page.locator('#theme-toggle').click();
             if(await page.locator('html').getAttribute('data-theme')!=='dark')throw Error('Theme toggle failed');
             await page.screenshot({path:'/tmp/portrait-'+width+'-dark.png',animations:'disabled'});
-            console.log(JSON.stringify({width,photoWidth:box.width,photoHeight:box.height,motion:'passed',theme:'passed',overflow:false}));
+            console.log(JSON.stringify({width,photoWidth:box.width,photoHeight:box.height,sourceDimensions:await img.evaluate(i=>[i.naturalWidth,i.naturalHeight]),motion:'passed',theme:'passed',overflow:false}));
             await page.close();
           }
           const reduced=await browser.newPage({viewport:{width:390,height:900},reducedMotion:'reduce'});
@@ -66,4 +103,15 @@ jobs:
         if: always()
         with:
           name: portrait-responsive-verification
-          path: /tmp/portrait-*.png
+          path: |
+            /tmp/portrait-*.png
+            assets/profile/source.json
+      - name: Publish verified original portrait
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html assets/profile/
+          if ! git diff --cached --quiet; then
+            git commit -m "Cache verified highest-resolution original profile portrait"
+            git push origin HEAD:main
+          fi
