@@ -31,6 +31,10 @@ jobs:
           const cards=[...html.matchAll(/<article class="project[^"]*"[^>]*>[\s\S]*?<\/article>/g)].map(m=>m[0]);
           const report=[];
           const replacements=new Map();
+          const official={
+            'Rai — National Center for Public Opinion Polls':{url:'https://ncpop.org.sa/',file:'rai-official',label:'Official client organization website · not the survey app'},
+            'Visitors Management':{url:'https://visitors-rs.com/',file:'visitors-official',label:'Official Visitors product website'}
+          };
           const custom={
             'Wusol':['https://wusol.me/ar','https://wusol.me/en','https://app.wusol.me/ar/auth/login?next=%2Far%2Fhome'],
             'Zaker':['https://zaker.misbar.education/','https://play.google.com/store/apps/details?id=com.misbar.zaker'],
@@ -60,9 +64,10 @@ jobs:
               if(files.length)replacements.set(card,updated);
               report.push({name,status:files.length?'captured':'remote originals',files});return;
             }
-            if(/<img\b/.test(card)){report.push({name,status:'existing genuine image'});return;}
+            const target=official[name];
+            if(!target && /<img\b/.test(card)){report.push({name,status:'existing genuine image'});return;}
             const repo=card.match(/href="(https:\/\/github\.com\/Mounir-Almzayek\/[^"]+)"/)?.[1];
-            const candidates=[...(custom[name]||[]),...(repo?[repo]:[])];
+            const candidates=target?[target.url]:[...(custom[name]||[]),...(repo?[repo]:[])];
             const designTitles={'Clinic Hub':'clinic app','Sold Out / Order Application':'order app','Connect Four':'connect four'};
             if(designTitles[name]){
               const profile=await browser.newPage();
@@ -86,7 +91,7 @@ jobs:
                   const title=await page.title();
                   const body=await page.locator('body').innerText();
                   if(!isAsset&&(body.trim().length<70||/access denied|just a moment|verify you are human|page not found|bad gateway|sign in to github/i.test(title+' '+body.slice(0,180))))throw Error('Unusable page');
-                  const path='assets/previews/sources/project-'+String(index+1).padStart(2,'0')+'.jpg';
+                  const path='assets/previews/sources/'+(target?target.file:'source-'+name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''))+'.jpg';
                   const repoPage=new URL(url).hostname==='github.com';
                   if(repoPage&&!page.url().toLowerCase().includes(new URL(url).pathname.toLowerCase()))throw Error('Unexpected repository redirect');
                   if(isAsset){
@@ -97,7 +102,7 @@ jobs:
                   }else{
                     await page.screenshot({path,type:'jpeg',quality:84,animations:'disabled'});
                   }
-                  const label=isAsset?'Original public repository asset':repoPage?'Public source repository · not an app screenshot':url.includes('play.google.com')?'Official Google Play listing':url.includes('behance.net')?'Original published design project · Behance':'Official website · captured preview';
+                  const label=target?target.label:isAsset?'Original public repository asset':repoPage?'Public source repository · not an app screenshot':url.includes('play.google.com')?'Official Google Play listing':url.includes('behance.net')?'Original published design project · Behance':'Official website · captured preview';
                   const dest=isAsset?(repo||url):url;
                   const fig='<figure class="source-preview"><a href="'+esc(dest)+'"><img src="'+path+'" alt="'+esc(name)+' — '+esc(label)+'" loading="lazy" decoding="async"></a><span class="media-fallback">Open original source ↗</span><figcaption>'+esc(label)+'</figcaption></figure>';
                   const original=card.match(/<figure\b[^>]*>[\s\S]*?<\/figure>/)?.[0];
@@ -128,8 +133,11 @@ jobs:
             const page=await browser.newPage({viewport:{width,height:900},reducedMotion:'reduce'});
             const errors=[];page.on('pageerror',e=>errors.push(e.message));
             await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
-            if(await page.locator('.project').count()!==34)throw Error('Missing cards (34 expected)');
-            if(await page.locator('.project figure').count()!==34)throw Error('Missing preview');
+            if(await page.locator('.project').count()!==33)throw Error('Missing cards (33 expected)');
+            if(await page.locator('.project figure').count()!==33)throw Error('Missing preview');
+            if(await page.locator('[data-project-group="apps"] article h3').first().innerText()!=='Zaker')throw Error('Zaker must lead published apps');
+            if(await page.locator('.project h3').filter({hasText:'Solar Intelligence'}).count())throw Error('Removed research portal still visible');
+            if(await page.locator('.project a[href="https://ncpop.org.sa/"]').count()<1||await page.locator('.project a[href="https://visitors-rs.com/"]').count()<1)throw Error('Missing official sites');
             if(await page.locator('.profile-photo').evaluate(i=>getComputedStyle(i).filter)!=='none')throw Error('Portrait not in natural color');
             await page.locator('[data-filter="ai"]').click();
             await page.locator('[data-filter="all"]').click();
