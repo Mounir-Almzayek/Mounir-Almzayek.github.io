@@ -110,12 +110,12 @@ try {
     assert.equal(await page.locator('.project figure').count(), 18);
     assert.equal(await page.locator('[data-project-group="archive"]').count(), 0);
     assert.equal(await page.locator('#resumes a[href*="drive.google.com/file/d/"]').count(), 4);
-    assert.equal(await page.locator('[data-store-gallery="bin-taleb"] img').count(), 3);
-    assert.equal(await page.locator('[data-store-gallery="zaker"] img').count(), 3);
+    assert.equal(await page.locator('[data-store-gallery="bin-taleb"] .store-gallery img').count(), 3);
+    assert.equal(await page.locator('[data-store-gallery="zaker"] .store-gallery img').count(), 3);
     assert.equal(await page.locator('[data-visitors-preview] a').getAttribute('href'), 'https://visitors-rs.com/');
     assert.ok(await page.locator('a[href*="com.rs4it.qomel.visitors"]').count());
     assert.equal(await page.locator('[data-project-group="apps"] .project h3').first().innerText(), 'Zaker');
-    for (const img of await page.locator('img[src*="assets/"]').all()) {
+    for (const img of await page.locator('img[src*="assets/"]:not(.site-preview img)').all()) {
       await img.evaluate(async image => { image.loading = 'eager'; await image.decode(); });
     }
     const duplicates = await page.evaluate(() => {
@@ -198,7 +198,7 @@ try {
     name: card.querySelector('h3').textContent,
     tags: card.dataset.tags,
     links: [...card.querySelectorAll('a[href]')].map(link => link.href),
-    images: [...card.querySelectorAll('img')].map(img => img.src),
+    images: [...card.querySelectorAll('img')].filter(img => !img.closest('.site-preview, .store-gallery-wide')).map(img => img.src),
   })));
   const englishProjects = await readProjects();
   await bilingual.locator('#theme-toggle').click();
@@ -283,6 +283,27 @@ try {
     }
     await wipe.close();
   }
+  // All seven paired previews retain a stable height and expose manual controls.
+  const galleries = await browser.newPage({ viewport: { width: 1280, height: 900 }, reducedMotion: 'no-preference' });
+  await galleries.goto(origin, { waitUntil: 'domcontentloaded' });
+  assert.equal(await galleries.locator('.dual-preview').count(), 7);
+  const cup = galleries.locator('[data-preview-key="saudi-cup"]');
+  await cup.scrollIntoViewIfNeeded();
+  await galleries.mouse.move(1, 1);
+  const initialMode = await cup.getAttribute('data-preview-mode');
+  const beforeBox = await cup.locator('.preview-stage').boundingBox();
+  await galleries.waitForFunction(mode => document.querySelector('[data-preview-key="saudi-cup"]').dataset.previewMode !== mode, initialMode);
+  const afterBox = await cup.locator('.preview-stage').boundingBox();
+  assert.equal(beforeBox.height, afterBox.height);
+  await cup.locator('.preview-tab').first().click();
+  assert.equal(await cup.getAttribute('data-preview-mode'), 'store');
+  await cup.locator('.preview-tab').last().click();
+  assert.equal(await cup.getAttribute('data-preview-mode'), 'site');
+  await cup.locator('.preview-pause').click();
+  await galleries.mouse.move(1, 1);
+  await galleries.waitForTimeout(2250);
+  assert.equal(await cup.getAttribute('data-preview-mode'), 'site');
+  await galleries.close();
   const page = await browser.newPage({ reducedMotion: 'reduce' });
   await page.goto(origin, { waitUntil: 'domcontentloaded' });
   assert.equal(await page.locator('.signal-runner').evaluate(p => getComputedStyle(p).animationName), 'none');
