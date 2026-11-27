@@ -550,3 +550,39 @@ body[data-live-grid] { isolation:isolate;background-image:none }
   .credential-card h3 .recruiter-accent,.community-card h3 .recruiter-accent,
   .contact h2 .recruiter-accent { padding-bottom:0 }
 }
+
+
+/* Native, keyboard-operable disclosures retain the existing section design. */
+details.project-group > summary.group-heading {
+  display:block;cursor:pointer;list-style:none;user-select:none;
+}
+details.project-group > summary.group-heading::-webkit-details-marker { display:none }
+details.project-group > summary.group-heading::marker { content:'' }
+.group-heading .group-heading-content {
+  display:grid;grid-template-columns:110px minmax(0,1fr) 36px;gap:18px;align-items:start;
+  font-size:inherit;font-weight:inherit;letter-spacing:normal;margin:0;
+}
+.group-heading-content > .label { padding-top:6px }
+.group-heading-text { display:block;min-width:0 }
+.group-heading .group-title { display:block;font-size:25px;font-weight:600;letter-spacing:-.035em }
+.group-heading .group-description { display:block;font-size:14px;font-weight:400;color:var(--muted);margin-top:5px;letter-spacing:normal;line-height:1.5 }
+.group-chevron { width:36px;height:36px;padding:8px;border:1px solid var(--line);border-radius:50%;color:var(--muted);transition:transform .25s ease,color .2s,border-color .2s }
+details.project-group[open] > summary .group-chevron { transform:rotate(180deg) }
+details.project-group > summary:hover .group-chevron { color:var(--ink);border-color:var(--ink) }
+details.project-group > summary:focus-visible { outline:2px solid var(--ink);outline-offset:6px;border-radius:4px }
+details.project-group:not([open]) > .group-heading { margin-bottom:0 }
+details.project-group:not([open]) > .group-grid { display:none }
+[dir=rtl] .group-heading .group-title { letter-spacing:0;line-height:1.5 }
+@media(max-width:560px) {
+  .group-heading .group-heading-content { grid-template-columns:minmax(0,1fr) 36px;gap:5px 10px }
+  .group-heading-content > .label { grid-column:1;grid-row:1;padding-top:0 }
+  .group-heading-text { grid-column:1;grid-row:2 }
+  .group-heading .group-title { font-size:23px }
+  .group-chevron { grid-column:2;grid-row:1/3;align-self:center }
+}
+@media(prefers-reduced-motion:reduce) { .group-chevron { transition:none } }
+@media print {
+  .group-heading-content > .label,.group-chevron { display:none }
+  .group-heading .group-heading-content { display:block }
+  details.project-group > .group-grid { display:block!important }
+}

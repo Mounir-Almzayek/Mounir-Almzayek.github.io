@@ -5,18 +5,35 @@ function initProjectFilters() {
   const cards = [...document.querySelectorAll('.project[data-tags]')];
   const groups = [...document.querySelectorAll('[data-project-group]')];
   const result = document.getElementById('filter-result');
+  let current = 'all';
+  let overview = new Map();
   function filter(category) {
+    if (current === 'all' && category !== 'all') overview = new Map(groups.map(group => [group, group.open]));
     let count = 0;
     cards.forEach(card => {
       card.hidden = category !== 'all' && !card.dataset.tags.split(' ').includes(category);
       if (!card.hidden) count++;
     });
-    groups.forEach(group => { group.hidden = !group.querySelector('.project:not([hidden])'); });
+    groups.forEach(group => {
+      group.hidden = !group.querySelector('.project:not([hidden])');
+      if (category !== 'all' && !group.hidden) group.open = true;
+      else if (category === 'all' && current !== 'all' && overview.has(group)) group.open = overview.get(group);
+    });
+    current = category;
     buttons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.filter === category)));
     if (result) result.textContent = result.dataset.countLabel.replace('{count}', String(count));
   }
   buttons.forEach(button => button.addEventListener('click', () => filter(button.dataset.filter)));
   filter('all');
+  let printStates;
+  window.addEventListener('beforeprint', () => {
+    if (!printStates) printStates = groups.map(group => [group, group.open]);
+    groups.forEach(group => { group.open = true; });
+  });
+  window.addEventListener('afterprint', () => {
+    printStates?.forEach(([group, open]) => { group.open = open; });
+    printStates = null;
+  });
 }
 
 function initImageFallbacks() {
@@ -287,7 +304,7 @@ function initPortfolioMotion() {
     const ready = [];
     const waiting = [];
     for (const node of targets) {
-      if (seen.has(node) || node.closest('[hidden]')) continue;
+      if (seen.has(node) || node.closest('[hidden]') || (!node.matches('.group-heading') && node.closest('details.project-group:not([open])'))) continue;
       const rect = node.getBoundingClientRect();
       if (rect.bottom <= 0 || node.contains(document.activeElement)) {
         releasePending(node);
@@ -398,7 +415,7 @@ function initPortfolioMotion() {
       scheduleScan();
       const visible = [...document.querySelectorAll('.project:not([hidden])')].filter(card => {
         const bounds = card.getBoundingClientRect();
-        return bounds.bottom > 0 && bounds.top < innerHeight;
+        return !card.closest('details.project-group:not([open])') && bounds.bottom > 0 && bounds.top < innerHeight;
       });
       visible.forEach((card, i) => {
         if (!seen.has(card)) return;
@@ -430,6 +447,7 @@ function initPortfolioMotion() {
   window.addEventListener('scroll', scheduleScan, { passive: true });
   window.addEventListener('resize', scheduleScan, { passive: true });
   window.addEventListener('hashchange', scheduleScan);
+  document.querySelectorAll('details.project-group').forEach(group => group.addEventListener('toggle', scheduleScan));
   reduced.addEventListener('change', () => { if (reduced.matches) stop(); else start(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); else start(); });
   window.addEventListener('beforeprint', () => { printing = true; stop(); });
@@ -833,7 +851,7 @@ function initRecruiterAccents() {
     for (let i = pending.length - 1; i >= 0; i--) {
       const entry = pending[i];
       const { node } = entry;
-      if (node.closest('[hidden], [data-motion-typing], [data-motion-pending]')) continue;
+      if (node.closest('[hidden], [data-motion-typing], [data-motion-pending], details.project-group:not([open])')) continue;
       const bounds = node.getBoundingClientRect();
       const instant = reduce.matches || bounds.bottom <= 0;
       const owner = node.closest('.job, .project, .credential-card, .community-card, .stack > div, .contact h2');
@@ -864,7 +882,7 @@ function initRecruiterAccents() {
   const schedule = () => { if (!frame && pending.length) frame = requestAnimationFrame(scan); };
   const observer = typeof MutationObserver === 'function' ? new MutationObserver(schedule) : null;
   observer?.observe(document.querySelector('main') || document.body, {
-    subtree: true, attributes: true, attributeFilter: ['data-motion-typing', 'data-motion-pending', 'hidden']
+    subtree: true, attributes: true, attributeFilter: ['data-motion-typing', 'data-motion-pending', 'hidden', 'open']
   });
   window.addEventListener('scroll', schedule, { passive: true });
   window.addEventListener('resize', schedule, { passive: true });
